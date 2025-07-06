@@ -794,6 +794,7 @@ input[type="text"]:focus,
     transition: var(--transition);
     position: relative;
     z-index: 1;
+    -webkit-user-drag: element;
 }
 
 
@@ -809,15 +810,20 @@ input[type="text"]:focus,
     transform: scale(1.02);
 }
 
+
 .drag-handle {
     font-size: 1.2rem;
     color: var(--text-secondary);
     margin-right: 10px;
     cursor: grab;
     user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
     padding: 4px 8px;
     border-radius: var(--radius-sm);
     transition: var(--transition);
+    touch-action: none;
 }
 
 .drag-handle:hover {

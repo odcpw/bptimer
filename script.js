@@ -2044,8 +2044,6 @@ class SessionBuilder {
         this.namespace = config.namespace || 'session';
         
         /** Bind drag handlers to maintain correct 'this' context */
-        this.handleDragStart = this.handleDragStart.bind(this);
-        this.handleDragEnd = this.handleDragEnd.bind(this);
         this.handleDragOver = this.handleDragOver.bind(this);
         this.handleDrop = this.handleDrop.bind(this);
         this.handleDragEnter = this.handleDragEnter.bind(this);
@@ -2105,7 +2103,6 @@ class SessionBuilder {
             const handle = document.createElement('span');
             handle.className = 'drag-handle';
             handle.textContent = '≡';
-            handle.draggable = true;
             
             const order = document.createElement('span');
             order.className = 'practice-order';
@@ -2126,11 +2123,12 @@ class SessionBuilder {
             item.appendChild(content);
             item.appendChild(removeBtn);
             
-            // Add event listeners to the handle for dragging
-            handle.addEventListener('dragstart', (e) => this.handleDragStart(e, item));
-            handle.addEventListener('dragend', (e) => this.handleDragEnd(e, item));
+            // Make the entire item draggable
+            item.draggable = true;
             
-            // Add event listeners to the item for drop target
+            // Add event listeners to the item for dragging
+            item.addEventListener('dragstart', this.handleDragStart);
+            item.addEventListener('dragend', this.handleDragEnd);
             item.addEventListener('dragover', this.handleDragOver);
             item.addEventListener('drop', this.handleDrop);
             item.addEventListener('dragenter', this.handleDragEnter);
@@ -2176,65 +2174,116 @@ class SessionBuilder {
     }
     
     /**
-     * Drag and drop event handlers for practice reordering
-     * Uses HTML5 drag and drop API
+     * Handle drag start event when user begins dragging a practice item
+     * Stores reference to dragged element and applies visual feedback
+     * @param {DragEvent} e - The drag event
      */
-    handleDragStart(e, item) {
+    handleDragStart(e) {
+        const item = e.currentTarget;
         this.draggedElement = item;
         this.draggedIndex = parseInt(item.dataset.index);
         item.classList.add('dragging');
         e.dataTransfer.effectAllowed = 'move';
-        e.dataTransfer.setData('text/html', item.innerHTML);
+        e.dataTransfer.setData('text/plain', this.draggedIndex);
     }
     
-    handleDragEnd(e, item) {
-        item.classList.remove('dragging');
+    /**
+     * Handle drag end event to clean up visual states
+     * Removes dragging styles from all elements
+     * @param {DragEvent} e - The drag event
+     */
+    handleDragEnd(e) {
+        e.currentTarget.classList.remove('dragging');
         this.practicesContainer.querySelectorAll('.selected-practice-item').forEach(item => {
             item.classList.remove('drag-over');
         });
     }
     
+    /**
+     * Handle drag over event to provide live preview of drop position
+     * Dynamically reorders DOM elements as user drags
+     * @param {DragEvent} e - The drag event
+     */
     handleDragOver(e) {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        
+        const afterElement = this.getDragAfterElement(e.clientY);
+        const draggingItem = this.practicesContainer.querySelector('.dragging');
+        
+        if (afterElement == null) {
+            this.practicesContainer.appendChild(draggingItem);
+        } else {
+            this.practicesContainer.insertBefore(draggingItem, afterElement);
+        }
+    }
+    
+    /**
+     * Handle drag enter event to highlight potential drop targets
+     * @param {DragEvent} e - The drag event
+     * @returns {boolean} false to allow drop
+     */
+    handleDragEnter(e) {
         if (e.preventDefault) {
             e.preventDefault();
         }
-        e.dataTransfer.dropEffect = 'move';
-        return false;
-    }
-    
-    handleDragEnter(e) {
         if (e.currentTarget !== this.draggedElement) {
             e.currentTarget.classList.add('drag-over');
         }
+        return false;
     }
     
+    /**
+     * Handle drag leave event to remove drop target highlighting
+     * @param {DragEvent} e - The drag event
+     */
     handleDragLeave(e) {
         e.currentTarget.classList.remove('drag-over');
     }
     
+    /**
+     * Handle drop event to finalize the new practice order
+     * Reads final DOM order and updates practices array accordingly
+     * @param {DragEvent} e - The drag event
+     */
     handleDrop(e) {
-        if (e.stopPropagation) {
-            e.stopPropagation();
-        }
+        e.preventDefault();
+        e.stopPropagation();
         
-        const dropTarget = e.currentTarget;
-        if (dropTarget !== this.draggedElement && dropTarget.dataset.namespace === this.namespace) {
-            const dropIndex = parseInt(dropTarget.dataset.index);
-            const draggedPractice = this.practices[this.draggedIndex];
+        // Get the final order from the DOM
+        const items = [...this.practicesContainer.querySelectorAll('.selected-practice-item')];
+        const newOrder = items.map(item => {
+            const index = parseInt(item.dataset.index);
+            return this.practices[index];
+        });
+        
+        // Update practices array with new order
+        this.practices = newOrder;
+        
+        // Update the list to refresh indices
+        this.updatePracticesList();
+        this.onUpdate();
+    }
+    
+    /**
+     * Calculate which element the dragged item should be inserted after
+     * Uses mouse Y position to determine optimal insertion point
+     * @param {number} y - The Y coordinate of the mouse
+     * @returns {Element|null} The element to insert after, or null to append at end
+     */
+    getDragAfterElement(y) {
+        const draggableElements = [...this.practicesContainer.querySelectorAll('.selected-practice-item:not(.dragging)')];
+        
+        return draggableElements.reduce((closest, child) => {
+            const box = child.getBoundingClientRect();
+            const offset = y - box.top - box.height / 2;
             
-            this.practices.splice(this.draggedIndex, 1);
-            
-            if (this.draggedIndex < dropIndex) {
-                this.practices.splice(dropIndex - 1, 0, draggedPractice);
+            if (offset < 0 && offset > closest.offset) {
+                return { offset: offset, element: child };
             } else {
-                this.practices.splice(dropIndex, 0, draggedPractice);
+                return closest;
             }
-            
-            this.updatePracticesList();
-            this.onUpdate();
-        }
-        
-        return false;
+        }, { offset: Number.NEGATIVE_INFINITY }).element;
     }
     
     /**
