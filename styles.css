@@ -761,6 +761,8 @@ input[type="text"]:focus,
     background: var(--bg-secondary);
     position: relative;
     overflow: hidden;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
 }
 
 .selected-practices::before {
@@ -794,7 +796,6 @@ input[type="text"]:focus,
     transition: var(--transition);
     position: relative;
     z-index: 1;
-    -webkit-user-drag: element;
 }
 
 
@@ -802,6 +803,8 @@ input[type="text"]:focus,
     opacity: 0.5;
     transform: scale(0.95);
     box-shadow: var(--shadow-lg);
+    pointer-events: none;
+    z-index: 1000;
 }
 
 .selected-practice-item.drag-over {
@@ -824,6 +827,8 @@ input[type="text"]:focus,
     border-radius: var(--radius-sm);
     transition: var(--transition);
     touch-action: none;
+    -webkit-touch-callout: none;
+    -webkit-user-drag: none;
 }
 
 .drag-handle:hover {

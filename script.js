@@ -2049,6 +2049,16 @@ class SessionBuilder {
         this.handleDragEnter = this.handleDragEnter.bind(this);
         this.handleDragLeave = this.handleDragLeave.bind(this);
         
+        /** Bind pointer handlers for touch/mobile support */
+        this.handlePointerDown = this.handlePointerDown.bind(this);
+        this.handlePointerMove = this.handlePointerMove.bind(this);
+        this.handlePointerUp = this.handlePointerUp.bind(this);
+        
+        /** Track pointer drag state */
+        this.pointerDragging = false;
+        this.pointerStartY = 0;
+        this.draggedClone = null;
+        
         /** Initialize posture buttons and practice list */
         this.initializePostureButtons();
         this.updatePracticesList();
@@ -2103,6 +2113,11 @@ class SessionBuilder {
             const handle = document.createElement('span');
             handle.className = 'drag-handle';
             handle.textContent = '≡';
+            
+            // Add pointer events for touch support
+            handle.addEventListener('pointerdown', (e) => this.handlePointerDown(e, item));
+            // Prevent default touch behavior on handle
+            handle.addEventListener('touchstart', (e) => e.preventDefault(), { passive: false });
             
             const order = document.createElement('span');
             order.className = 'practice-order';
@@ -2321,6 +2336,98 @@ class SessionBuilder {
         /** Clear references to prevent memory leaks */
         this.practices = [];
         this.onUpdate = null;
+    }
+    
+    /**
+     * Handle pointer down event for touch/mouse dragging
+     * Initiates drag operation on mobile devices where HTML5 drag doesn't work
+     * @param {PointerEvent} e - The pointer event
+     * @param {Element} item - The practice item element
+     */
+    handlePointerDown(e, item) {
+        // Only handle primary button/touch
+        if (e.button !== 0) return;
+        
+        this.pointerDragging = true;
+        this.draggedElement = item;
+        this.draggedIndex = parseInt(item.dataset.index);
+        this.pointerStartY = e.clientY;
+        
+        // Add visual feedback
+        item.classList.add('dragging');
+        
+        // Set up document-level listeners for move and up
+        document.addEventListener('pointermove', this.handlePointerMove);
+        document.addEventListener('pointerup', this.handlePointerUp);
+        document.addEventListener('pointercancel', this.handlePointerUp);
+        
+        // Prevent text selection
+        e.preventDefault();
+    }
+    
+    /**
+     * Handle pointer move event during touch/mouse dragging
+     * Provides live preview by reordering DOM elements
+     * @param {PointerEvent} e - The pointer event
+     */
+    handlePointerMove(e) {
+        if (!this.pointerDragging) return;
+        
+        // Get the element under the pointer
+        const elementBelow = document.elementFromPoint(e.clientX, e.clientY);
+        if (!elementBelow) return;
+        
+        // Find the practice item we're hovering over
+        const hoverItem = elementBelow.closest('.selected-practice-item');
+        if (!hoverItem || hoverItem === this.draggedElement) return;
+        
+        // Use the same logic as drag and drop
+        const afterElement = this.getDragAfterElement(e.clientY);
+        
+        if (afterElement == null) {
+            this.practicesContainer.appendChild(this.draggedElement);
+        } else {
+            this.practicesContainer.insertBefore(this.draggedElement, afterElement);
+        }
+    }
+    
+    /**
+     * Handle pointer up event to complete touch/mouse dragging
+     * Finalizes the new order and updates the practices array
+     * @param {PointerEvent} e - The pointer event
+     */
+    handlePointerUp(e) {
+        if (!this.pointerDragging) return;
+        
+        this.pointerDragging = false;
+        
+        // Remove document-level listeners
+        document.removeEventListener('pointermove', this.handlePointerMove);
+        document.removeEventListener('pointerup', this.handlePointerUp);
+        document.removeEventListener('pointercancel', this.handlePointerUp);
+        
+        // Remove visual feedback
+        if (this.draggedElement) {
+            this.draggedElement.classList.remove('dragging');
+        }
+        
+        // Get the final order from the DOM
+        const items = [...this.practicesContainer.querySelectorAll('.selected-practice-item')];
+        const newOrder = items.map(item => {
+            const index = parseInt(item.dataset.index);
+            return this.practices[index];
+        });
+        
+        // Update practices array with new order
+        this.practices = newOrder;
+        
+        // Update the list to refresh indices
+        this.updatePracticesList();
+        this.onUpdate();
+        
+        // Clean up
+        this.draggedElement = null;
+        this.draggedIndex = null;
     }
 }
 
