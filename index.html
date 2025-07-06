@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BPtimer - Balanced Practice Timer</title>
+    <meta name="description" content="A simple, offline-capable meditation timer for balanced meditation/mental development practice with session tracking and statistics">
+    
+    <!-- Preload critical resources -->
+    <link rel="preload" href="styles.css" as="style">
+    <link rel="preload" href="script.js" as="script">
+    
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="styles.css">
+    
+    <!-- PWA Configuration -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0a0a0f">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="BPtimer">
+    
+    <!-- Preconnect to CDN for faster Chart.js loading when needed -->
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+    
+    <!-- Inline critical CSS for faster initial render -->
+    <style>
+        body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; }
+        .loading-screen { display: flex; align-items: center; justify-content: center; min-height: 100vh; background: #0a0a0f; }
+        .loading-spinner { width: 40px; height: 40px; border: 3px solid #2a2a38; border-top-color: #00d4aa; border-radius: 50%; animation: spin 1s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+    </style>
+</head>
+<body>
+    <!-- Initial loading screen -->
+    <div id="loadingScreen" class="loading-screen">
+        <div class="loading-spinner"></div>
+        <span class="visually-hidden">Loading meditation timer...</span>
+    </div>
+    
+    <!-- Skip to main content link for keyboard users -->
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+    
+    <!-- Dark mode toggle removed - app is always in dark mode -->
+    
+    <!-- Toast notification container -->
+    <div id="toastContainer" class="toast-container" role="status" aria-live="polite"></div>
+    
+    <!-- Bell audio element -->
+    <audio id="bellSound" preload="auto">
+        <source src="bell.ogg" type="audio/ogg">
+        <source src="bell.mp3" type="audio/mpeg">
+    </audio>
+    
+    <main class="container" role="main" id="main-content" style="display: none;">
+        <!-- Timer Display Section -->
+        <div class="timer-section">
+            <div class="timer-display" id="timerDisplay" role="timer" aria-live="polite" aria-atomic="true">00:00</div>
+            <div class="duration-controls">
+                <button id="decreaseBtn" class="adjust-btn" aria-label="Decrease duration by 5 minutes">-5</button>
+                <span id="customDuration">30 min</span>
+                <button id="increaseBtn" class="adjust-btn" aria-label="Increase duration by 5 minutes">+5</button>
+            </div>
+        </div>
+
+        <!-- Timer Controls -->
+        <div class="timer-controls">
+            <button id="startBtn" class="control-btn primary" aria-label="Start timer">Start</button>
+            <button id="pauseBtn" class="control-btn" style="display: none;" aria-label="Pause timer">Pause</button>
+            <button id="stopBtn" class="control-btn danger" style="display: none;" aria-label="Stop timer">Stop</button>
+        </div>
+
+        <!-- Navigation Tabs -->
+        <nav aria-label="Main navigation">
+        <div class="nav-tabs">
+            <button class="nav-tab active" data-view="timer" role="tab" aria-selected="true" aria-controls="timerView">Timer</button>
+            <button class="nav-tab" data-view="stats" role="tab" aria-selected="false" aria-controls="statsView">Statistics</button>
+        </div>
+        </nav>
+
+        <!-- Timer View -->
+        <div id="timerView" class="view-container">
+            <!-- Session Planner (Collapsible) -->
+            <div class="session-planner-section">
+                <button id="togglePlannerBtn" class="planner-toggle">
+                    <span class="planner-arrow">▶</span>
+                    <span>Plan Session (Optional)</span>
+                </button>
+                <div id="sessionPlannerContent" class="planner-content" style="display: none;">
+                    <!-- Posture Selection -->
+                    <div class="posture-section">
+                        <h4>Posture</h4>
+                        <div id="postureButtons" class="posture-buttons">
+                            <!-- Will be populated by JavaScript -->
+                        </div>
+                    </div>
+                    
+                    <!-- Selected Practices -->
+                    <div class="selected-practices-section">
+                        <h4>Session Structure</h4>
+                        <div id="selectedPractices" class="selected-practices">
+                            <!-- Will show selected practices -->
+                        </div>
+                        <button id="addPracticeBtn" class="control-btn">Add Practice</button>
+                        <div id="practiceSelector" class="practice-selector" style="display: none;">
+                            <!-- Will be populated when adding practices -->
+                        </div>
+                    </div>
+                    
+                    <!-- Favorites -->
+                    <div class="favorites-section">
+                        <h4>Load Favorite</h4>
+                        <div id="favoritesList" class="favorites-list">
+                            <!-- Will be populated by JavaScript -->
+                        </div>
+                        <div class="save-favorite-section">
+                            <input type="text" id="sessionName" placeholder="Session name (optional)" aria-label="Session name">
+                            <button id="saveFavoriteBtn" class="control-btn">Save as Favorite</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+        <!-- Statistics View -->
+        <div id="statsView" class="view-container" style="display: none;">
+            <div class="stats-controls">
+                <button class="period-btn active" data-period="week">Week</button>
+                <button class="period-btn" data-period="fortnight">Fortnight</button>
+                <button class="period-btn" data-period="month">Month</button>
+            </div>
+            <div id="statsContent" class="stats-content">
+                <!-- Will be populated by JavaScript -->
+            </div>
+            <div class="data-controls">
+                <button id="exportBtn" class="control-btn">Export Data</button>
+                <button id="importBtn" class="control-btn">Import Data</button>
+                <input type="file" id="importFile" accept=".json" style="display: none;" aria-label="Import data file">
+            </div>
+        </div>
+
+        <!-- Session Info (shows during timer) -->
+        <div id="sessionInfo" class="session-info" style="display: none;">
+            <h3>Current Practice</h3>
+            <div id="currentPractice">-</div>
+            <div id="sessionPracticesList" class="session-practices-list" style="display: none;">
+                <!-- Will show list of practices for planned sessions -->
+            </div>
+        </div>
+
+        <!-- Recent Sessions -->
+        <div class="recent-sessions">
+            <h3>Recent Sessions</h3>
+            <div id="recentSessionsList" class="sessions-list">
+                <!-- Will be populated by JavaScript -->
+            </div>
+        </div>
+
+        <!-- Post-Session Practice Selection Modal -->
+        <div id="postSessionModal" class="modal" style="display: none;">
+            <div class="modal-content">
+                <button class="modal-close" id="modalCloseBtn" aria-label="Close modal">×</button>
+                <h2>What did you practice?</h2>
+                <p>Record your actual session:</p>
+                
+                <!-- Posture Selection -->
+                <div class="posture-section">
+                    <h4>Posture</h4>
+                    <div id="postSessionPostures" class="posture-buttons">
+                        <!-- Will be populated by JavaScript -->
+                    </div>
+                </div>
+                
+                <!-- Selected Practices -->
+                <div class="selected-practices-section">
+                    <h4>Practices (in order)</h4>
+                    <div id="postSessionSelected" class="selected-practices">
+                        <!-- Will show selected practices -->
+                    </div>
+                    <button id="postAddPracticeBtn" class="control-btn">Add Practice</button>
+                    <div id="postPracticeSelector" class="practice-selector" style="display: none;">
+                        <!-- Will be populated when adding practices -->
+                    </div>
+                </div>
+                
+                <div class="modal-actions">
+                    <button id="saveSessionBtn" class="control-btn primary">Save Session</button>
+                    <button id="saveTimeOnlyBtn" class="control-btn">Save Time Only</button>
+                    <button id="cancelSessionBtn" class="control-btn">Cancel</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Practice Info Modal -->
+        <div id="practiceInfoModal" class="modal" style="display: none;">
+            <div class="modal-content practice-info-modal">
+                <h3 id="practiceInfoTitle">Practice Information</h3>
+                <div id="practiceInfoContent" class="practice-info-content">
+                    <!-- Content will be populated dynamically -->
+                </div>
+                <div class="modal-actions">
+                    <button id="closePracticeInfoBtn" class="control-btn">Close</button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Load main script with defer for better performance -->
+    <script src="script.js" defer></script>
+    
+    <!-- Inline script to handle initial loading -->
+    <script>
+        // Check for dark mode preference early to prevent flash
+        if (localStorage.getItem('darkMode') === 'true') {
+            document.body.classList.add('dark-mode');
+        }
+        
+        // Service Worker update notification
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.addEventListener('controllerchange', () => {
+                if (!document.hidden) {
+                    const toast = document.createElement('div');
+                    toast.className = 'toast toast-info';
+                    toast.textContent = 'App updated. Refresh for latest version.';
+                    toast.onclick = () => window.location.reload();
+                    document.getElementById('toastContainer').appendChild(toast);
+                    setTimeout(() => toast.remove(), 5000);
+                }
+            });
+        }
+    </script>
+</body>
+</html>

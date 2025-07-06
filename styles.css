@@ -1,0 +1,1435 @@
+/* Base styles - meditation-appropriate calm design */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+:root {
+    /* Color scheme - unified dark aesthetic */
+    /* Background colors - deep, rich dark tones */
+    --bg-primary: #0a0a0f;        /* Main background - near black with slight blue */
+    --bg-secondary: #16161f;      /* Cards/containers - slightly lighter */
+    --bg-tertiary: #1e1e2a;       /* Hover states, subtle elevation */
+    --bg-accent: #252534;         /* Selected/active states */
+    
+    /* Text colors - high contrast, easy on eyes */
+    --text-primary: #e8e8f0;      /* Main text - soft white */
+    --text-secondary: #9898a8;    /* Secondary text - muted gray */
+    --text-tertiary: #6b6b7c;     /* Disabled/hints - darker gray */
+    
+    /* Accent colors - vibrant but not harsh */
+    --accent: #00d4aa;            /* Primary accent - teal/mint */
+    --accent-hover: #00b894;      /* Hover state - darker teal */
+    --accent-light: #00d4aa20;    /* Light accent for backgrounds */
+    --accent-glow: 0 0 20px rgba(0, 212, 170, 0.3); /* Glow effect */
+    
+    /* Semantic colors */
+    --danger: #ff5e5b;            /* Error/stop - warm red */
+    --danger-hover: #e74c49;      /* Danger hover */
+    --success: #00d4aa;           /* Success - matches accent */
+    --warning: #ffb74d;           /* Warning - warm amber */
+    --info: #64b5f6;              /* Info - soft blue */
+    
+    /* Border and divider colors */
+    --border: #2a2a38;            /* Standard borders */
+    --border-light: #1e1e2a;      /* Subtle borders */
+    --border-focus: #00d4aa;      /* Focus borders */
+    
+    /* Shadow system - subtle depth */
+    --shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+    --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.5);
+    --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.6);
+    --shadow-inner: inset 0 2px 4px rgba(0, 0, 0, 0.3);
+    
+    /* Border radius system */
+    --radius-sm: 6px;
+    --radius-md: 10px;
+    --radius-lg: 16px;
+    --radius-xl: 24px;
+    
+    /* Transitions */
+    --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-fast: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+    
+    /* Gradients for special elements */
+    --gradient-primary: linear-gradient(135deg, #00d4aa 0%, #00b894 100%);
+    --gradient-subtle: linear-gradient(135deg, #16161f 0%, #1e1e2a 100%);
+    --gradient-dark: linear-gradient(135deg, #0a0a0f 0%, #16161f 100%);
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    font-size: 16px;
+    line-height: 1.7;
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    transition: var(--transition);
+}
+
+/* Button reset for consistency */
+button {
+    font-family: inherit;
+    font-size: inherit;
+    color: var(--text-primary);
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 10px 16px;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+
+button:active:not(:disabled) {
+    transform: translateY(0);
+}
+
+button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.container {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+/* Timer Display Section */
+.timer-section {
+    text-align: center;
+    margin-bottom: 40px;
+    padding: 40px 24px;
+    background: var(--gradient-subtle);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md);
+    border: 1px solid var(--border-light);
+    position: relative;
+    overflow: hidden;
+}
+
+.timer-section::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, var(--accent-light) 0%, transparent 70%);
+    opacity: 0.5;
+    animation: pulse 4s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { 
+        transform: scale(0.8); 
+        opacity: 0.2;
+    }
+    50% { 
+        transform: scale(1.2); 
+        opacity: 0.4;
+    }
+}
+
+.timer-display {
+    font-size: clamp(4rem, 10vw, 6.5rem);
+    font-weight: 200;
+    letter-spacing: 0.05em;
+    margin-bottom: 24px;
+    font-variant-numeric: tabular-nums;
+    position: relative;
+    z-index: 1;
+    text-shadow: 0 0 30px rgba(0, 212, 170, 0.2);
+}
+
+.duration-controls {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    position: relative;
+    z-index: 1;
+}
+
+/* Timer Controls */
+.timer-controls {
+    display: flex;
+    gap: 16px;
+    justify-content: center;
+    margin-bottom: 40px;
+}
+
+.control-btn {
+    min-width: 120px;
+    min-height: 48px;
+    padding: 12px 24px;
+    font-size: 1.1rem;
+    border: 1px solid var(--border);
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: var(--transition);
+    font-weight: 500;
+    position: relative;
+    overflow: hidden;
+}
+
+.control-btn::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    background: radial-gradient(circle, var(--accent-light) 0%, transparent 70%);
+    transition: width 0.3s, height 0.3s;
+    transform: translate(-50%, -50%);
+}
+
+
+.control-btn:active {
+    transform: translateY(0);
+    box-shadow: var(--shadow);
+}
+
+.control-btn.primary {
+    background: var(--gradient-primary);
+    color: var(--bg-primary);
+    border-color: var(--accent);
+    font-weight: 600;
+}
+
+
+.control-btn.danger {
+    border-color: var(--danger);
+    color: var(--danger);
+    background: rgba(255, 94, 91, 0.1);
+}
+
+
+/* Duration controls integrated into timer section */
+.duration-controls .adjust-btn {
+    width: 52px;
+    height: 52px;
+    border: 1px solid var(--border);
+    background: var(--bg-secondary);
+    border-radius: var(--radius-md);
+    font-size: 1.3rem;
+    cursor: pointer;
+    transition: var(--transition);
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 500;
+}
+
+.duration-controls .adjust-btn:hover {
+    background: var(--bg-tertiary);
+    border-color: var(--accent);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+}
+
+.duration-controls .adjust-btn:active {
+    transform: translateY(0);
+    box-shadow: var(--shadow);
+}
+
+#customDuration {
+    font-size: 1.4rem;
+    min-width: 100px;
+    text-align: center;
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+/* Practice Section */
+.practice-section {
+    margin-bottom: 40px;
+}
+
+.practice-section h3 {
+    font-size: 1.2rem;
+    font-weight: 500;
+    margin-bottom: 16px;
+    color: var(--text-secondary);
+}
+
+.practice-buttons {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 12px;
+}
+
+.practice-btn {
+    min-height: 48px;
+    padding: 12px 16px;
+    border: 1px solid var(--border);
+    background: var(--bg-secondary);
+    border-radius: var(--radius-md);
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: var(--transition);
+    text-align: left;
+    color: var(--text-primary);
+}
+
+
+.practice-btn.selected {
+    background: var(--accent-light);
+    color: var(--accent);
+    border-color: var(--accent);
+    font-weight: 600;
+    border-color: var(--accent);
+}
+
+
+
+/* Session Info */
+.session-info {
+    background: var(--bg-secondary);
+    padding: 24px;
+    border-radius: var(--radius-md);
+    margin-bottom: 40px;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border-light);
+}
+
+.session-info h3 {
+    font-size: 1.1rem;
+    margin-bottom: 12px;
+    color: var(--text-secondary);
+}
+
+#currentPractice {
+    font-size: 1.1rem;
+}
+
+/* Recent Sessions */
+.recent-sessions {
+    margin-top: 40px;
+}
+
+.recent-sessions h3 {
+    font-size: 1.2rem;
+    font-weight: 500;
+    margin-bottom: 16px;
+    color: var(--text-secondary);
+}
+
+.sessions-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.session-item {
+    background: var(--bg-secondary);
+    padding: 16px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: var(--transition);
+}
+
+
+.session-practice {
+    font-weight: 500;
+}
+
+.session-meta {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+/* Focus styles for accessibility */
+*:focus {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+*:focus:not(:focus-visible) {
+    outline: none;
+}
+
+button:focus {
+    outline-offset: 4px;
+}
+
+button:focus:not(:focus-visible) {
+    outline: none;
+}
+
+/* Skip link for keyboard navigation */
+.skip-link {
+    position: absolute;
+    top: -40px;
+    left: 0;
+    background: var(--gradient-primary);
+    color: var(--bg-primary);
+    padding: 8px 16px;
+    text-decoration: none;
+    border-radius: 0 0 var(--radius-md) 0;
+    font-weight: 600;
+    box-shadow: var(--shadow-md);
+    transition: var(--transition);
+}
+
+.skip-link:focus {
+    top: 0;
+}
+
+/* Improved contrast for better readability */
+.session-meta,
+.favorite-practices,
+.day-minutes {
+    color: var(--text-secondary);
+}
+
+
+/* Mobile adjustments */
+@media (max-width: 480px) {
+    .container {
+        padding: 16px;
+    }
+    
+    .timer-display {
+        font-size: clamp(2.5rem, 10vw, 3.5rem);
+    }
+    
+    .timer-controls {
+        flex-direction: column;
+        width: 100%;
+        gap: 12px;
+    }
+    
+    .control-btn {
+        width: 100%;
+        min-width: unset;
+    }
+    
+    .duration-presets {
+        grid-template-columns: repeat(3, 1fr);
+    }
+    
+    /* Make drag handles larger on mobile for easier touch */
+    .drag-handle {
+        font-size: 1.5rem;
+        padding: 0 8px;
+    }
+}
+
+
+
+/* Input fields styling */
+input[type="text"],
+.session-name-input,
+.save-favorite-section input {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border);
+    color: var(--text-primary);
+    padding: 12px 16px;
+    border-radius: var(--radius-md);
+    transition: var(--transition);
+}
+
+input[type="text"]:focus,
+.session-name-input:focus,
+.save-favorite-section input:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-light);
+}
+
+/* Empty message styling */
+.empty-message {
+    color: var(--text-tertiary);
+    font-style: italic;
+}
+
+/* Navigation tabs */
+.nav-tabs {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 32px;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 0;
+}
+
+.nav-tab {
+    padding: 12px 24px;
+    border: none;
+    background: none;
+    color: var(--text-secondary);
+    font-size: 1rem;
+    cursor: pointer;
+    transition: var(--transition);
+    border-bottom: 3px solid transparent;
+    margin-bottom: -1px;
+    position: relative;
+}
+
+
+.nav-tab.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+    font-weight: 600;
+}
+
+.nav-tab.active::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: var(--gradient-primary);
+    box-shadow: var(--accent-glow);
+}
+
+
+/* View containers */
+.view-container {
+    min-height: 400px;
+}
+
+/* Hierarchical practice categories */
+.practice-categories {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.category-group {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    background: var(--bg-secondary);
+    transition: var(--transition);
+}
+
+
+.category-header {
+    padding: 16px;
+    background: transparent;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: var(--transition);
+    font-weight: 500;
+}
+
+.category-header:hover {
+    background: var(--bg-tertiary);
+}
+
+.category-header.expanded {
+    background: var(--accent-light);
+    color: var(--accent);
+    border-bottom: 1px solid var(--border);
+}
+
+.category-arrow {
+    transition: transform 0.2s ease;
+}
+
+.category-header.expanded .category-arrow {
+    transform: rotate(90deg);
+}
+
+.category-practices {
+    display: none;
+    padding: 16px;
+    background: var(--bg-secondary);
+    gap: 8px;
+}
+
+.category-practices.expanded {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    animation: slideDown 0.2s ease-out;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.subcategory-group {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    margin: 5px;
+}
+
+.subcategory-header {
+    padding: 10px;
+    background: var(--bg-primary);
+    cursor: pointer;
+    font-size: 0.95rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.subcategory-header:hover {
+    background: var(--accent);
+    color: white;
+}
+
+.subcategory-practices {
+    display: none;
+    padding: 8px;
+    background: var(--bg-secondary);
+}
+
+.subcategory-practices.expanded {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+/* Practice item wrapper for info button layout */
+.practice-item-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.practice-item {
+    flex: 1;
+    padding: 10px 14px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: var(--transition);
+    background: var(--bg-primary);
+    color: var(--text-primary);
+}
+
+.practice-item.selected {
+    background: var(--accent);
+    color: white;
+    border-color: var(--accent);
+}
+
+/* Practice info button */
+.practice-info-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--bg-secondary);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: var(--transition);
+    font-size: 0.9rem;
+    opacity: 0.7;
+}
+
+.practice-info-btn:hover {
+    opacity: 1;
+    border-color: var(--accent);
+    background: var(--bg-tertiary);
+    color: var(--accent);
+}
+
+
+/* Posture buttons */
+.posture-section {
+    margin-bottom: 30px;
+}
+
+.posture-buttons {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 12px;
+}
+
+.posture-btn {
+    min-height: 48px;
+    padding: 12px 16px;
+    border: 1px solid var(--border);
+    background: var(--bg-secondary);
+    border-radius: var(--radius-sm);
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: var(--transition);
+    color: var(--text-primary);
+}
+
+.posture-btn:hover {
+    border-color: var(--accent);
+    background: var(--bg-tertiary);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow);
+}
+
+.posture-btn.selected {
+    background: var(--accent-light);
+    color: var(--accent);
+    border-color: var(--accent);
+    font-weight: 600;
+}
+
+.posture-btn.selected:hover {
+    background: rgba(0, 212, 170, 0.2);
+    border-color: var(--accent-hover);
+}
+
+
+/* Favorites section */
+.favorites-section {
+    margin-top: 30px;
+}
+
+.favorites-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.favorite-item {
+    padding: 16px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: var(--transition);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.favorite-item:hover {
+    border-color: var(--accent);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow);
+    background: var(--bg-tertiary);
+}
+
+.favorite-name {
+    font-weight: 500;
+}
+
+.favorite-practices {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+
+.favorite-delete {
+    background: none;
+    border: none;
+    color: var(--danger);
+    cursor: pointer;
+    font-size: 1.2rem;
+    padding: 5px;
+}
+
+/* Plan session view */
+.plan-section {
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.selected-practices {
+    margin-bottom: 20px;
+    min-height: 100px;
+    border: 2px dashed var(--border);
+    border-radius: var(--radius-md);
+    padding: 16px;
+    background: var(--bg-secondary);
+    position: relative;
+    overflow: hidden;
+}
+
+.selected-practices::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: repeating-linear-gradient(
+        45deg,
+        transparent,
+        transparent 10px,
+        var(--border-light) 10px,
+        var(--border-light) 20px
+    );
+    opacity: 0.1;
+    pointer-events: none;
+}
+
+.selected-practice-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px;
+    background: var(--bg-primary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    margin-bottom: 8px;
+    cursor: move;
+    transition: var(--transition);
+    position: relative;
+    z-index: 1;
+}
+
+
+.selected-practice-item.dragging {
+    opacity: 0.5;
+    transform: scale(0.95);
+    box-shadow: var(--shadow-lg);
+}
+
+.selected-practice-item.drag-over {
+    border-color: var(--accent);
+    background: var(--accent-light);
+    transform: scale(1.02);
+}
+
+.drag-handle {
+    font-size: 1.2rem;
+    color: var(--text-secondary);
+    margin-right: 10px;
+    cursor: grab;
+    user-select: none;
+}
+
+.drag-handle:active {
+    cursor: grabbing;
+}
+
+.practice-order {
+    color: var(--text-secondary);
+    margin-right: 10px;
+}
+
+.remove-practice {
+    background: none;
+    border: none;
+    color: var(--danger);
+    cursor: pointer;
+    font-size: 1.2rem;
+}
+
+.plan-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.session-name-input {
+    padding: 12px 16px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    font-size: 1rem;
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    transition: var(--transition);
+}
+
+.session-name-input:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-light);
+}
+
+/* Practice selector for planning */
+.practice-selector {
+    margin-top: 20px;
+    max-height: 400px;
+    overflow-y: auto;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 16px;
+    background: var(--bg-secondary);
+    box-shadow: var(--shadow-inner);
+}
+
+/* Custom scrollbar for practice selector */
+.practice-selector::-webkit-scrollbar {
+    width: 8px;
+}
+
+.practice-selector::-webkit-scrollbar-track {
+    background: var(--bg-primary);
+    border-radius: 4px;
+}
+
+.practice-selector::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 4px;
+}
+
+
+/* Session practices list */
+.session-practices-list {
+    margin-top: 15px;
+}
+
+.session-practice-item {
+    padding: 8px;
+    margin: 5px 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.practice-check {
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--border);
+    border-radius: var(--radius-sm);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: var(--transition);
+}
+
+.practice-check.completed {
+    background: var(--gradient-primary);
+    color: var(--bg-primary);
+    border-color: var(--accent);
+    box-shadow: 0 0 10px var(--accent-light);
+}
+
+/* Statistics view */
+.stats-controls {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin-bottom: 30px;
+}
+
+.period-btn {
+    padding: 10px 20px;
+    border: 1px solid var(--border);
+    background: var(--bg-secondary);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: var(--transition);
+    color: var(--text-primary);
+}
+
+
+.period-btn.active {
+    background: var(--accent-light);
+    color: var(--accent);
+    border-color: var(--accent);
+    font-weight: 600;
+}
+
+
+
+.stats-content {
+    display: grid;
+    gap: 30px;
+    margin-bottom: 30px;
+}
+
+.stat-card {
+    background: var(--gradient-subtle);
+    padding: 24px;
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-md);
+    border: 1px solid var(--border-light);
+    position: relative;
+    overflow: hidden;
+}
+
+.stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 100px;
+    height: 100px;
+    background: radial-gradient(circle, var(--accent-light) 0%, transparent 70%);
+    opacity: 0.3;
+    transform: translate(30%, -30%);
+}
+
+.stat-card h4 {
+    margin-bottom: 15px;
+    color: var(--text-secondary);
+}
+
+.calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 5px;
+}
+
+.calendar-day {
+    aspect-ratio: 1;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    position: relative;
+    background: var(--bg-primary);
+    transition: var(--transition);
+    cursor: pointer;
+}
+
+
+.calendar-day.has-practice {
+    border-color: var(--accent);
+    background: var(--accent-light);
+}
+
+
+.day-number {
+    font-weight: 500;
+}
+
+.day-minutes {
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+}
+
+.chart-container {
+    position: relative;
+    height: 300px;
+    margin: 20px 0;
+}
+
+.data-controls {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+}
+
+/* Empty states */
+.empty-message {
+    text-align: center;
+    color: var(--text-secondary);
+    padding: 20px;
+}
+
+/* Session planner styles */
+.session-planner-section {
+    margin-top: 30px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    background: var(--bg-secondary);
+    overflow: hidden;
+    transition: var(--transition);
+}
+
+
+.planner-toggle {
+    width: 100%;
+    padding: 16px 20px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    text-align: left;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: var(--transition);
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+
+.planner-arrow {
+    transition: transform 0.2s ease;
+    display: inline-block;
+}
+
+.planner-toggle.expanded .planner-arrow {
+    transform: rotate(90deg);
+}
+
+.planner-content {
+    padding: 20px;
+    border-top: 1px solid var(--border);
+}
+
+.planner-content h4 {
+    margin-bottom: 15px;
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+}
+
+.selected-practices-section {
+    margin-bottom: 25px;
+}
+
+.save-favorite-section {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.save-favorite-section input {
+    flex: 1;
+    padding: 12px 16px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    transition: var(--transition);
+}
+
+.save-favorite-section input:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-light);
+}
+
+/* Modal styles */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    backdrop-filter: blur(4px);
+    animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.modal-content {
+    background: var(--bg-secondary);
+    padding: 32px;
+    border-radius: var(--radius-xl);
+    max-width: 600px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+    box-shadow: var(--shadow-lg);
+    position: relative;
+    border: 1px solid var(--border-light);
+    animation: slideUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(50px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+/* Practice info modal specific styles */
+.practice-info-modal {
+    max-width: 700px;
+}
+
+.practice-info-content {
+    margin: 20px 0;
+    line-height: 1.7;
+    color: var(--text-primary);
+}
+
+.practice-info-content strong {
+    color: var(--accent);
+    font-weight: 600;
+    display: block;
+    margin-top: 16px;
+    margin-bottom: 8px;
+}
+
+.practice-info-content ul {
+    padding-left: 20px;
+    margin: 8px 0;
+}
+
+.practice-info-content li {
+    margin-bottom: 6px;
+    color: var(--text-secondary);
+}
+
+.modal-close {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: var(--bg-tertiary);
+    color: var(--text-secondary);
+    font-size: 24px;
+    line-height: 1;
+    cursor: pointer;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: var(--transition);
+}
+
+
+.modal-content h2 {
+    margin-bottom: 10px;
+}
+
+.modal-content p {
+    color: var(--text-secondary);
+    margin-bottom: 20px;
+}
+
+
+.modal-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+}
+
+/* Toast Notifications */
+.toast-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1100;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    pointer-events: none;
+}
+
+.toast {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    padding: 16px 20px;
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-lg);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 280px;
+    max-width: 400px;
+    pointer-events: auto;
+    cursor: pointer;
+    transition: var(--transition);
+    animation: slideIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    border: 1px solid var(--border);
+    position: relative;
+    overflow: hidden;
+}
+
+.toast::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    background: var(--accent);
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(120%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+
+.toast-success::before {
+    background: var(--gradient-primary);
+}
+
+.toast-error::before {
+    background: var(--danger);
+}
+
+.toast-info::before {
+    background: var(--info);
+}
+
+/* Loading States */
+.skeleton {
+    background: linear-gradient(90deg, var(--bg-secondary) 25%, var(--bg-tertiary) 50%, var(--bg-secondary) 75%);
+    background-size: 200% 100%;
+    animation: loading 1.5s infinite;
+    border-radius: var(--radius-sm);
+}
+
+@keyframes loading {
+    0% {
+        background-position: 200% 0;
+    }
+    100% {
+        background-position: -200% 0;
+    }
+}
+
+.spinner {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    filter: drop-shadow(0 0 4px var(--accent-light));
+}
+
+/* Performance Optimizations */
+.will-change-transform {
+    will-change: transform;
+}
+
+.hardware-accelerated {
+    transform: translateZ(0);
+    backface-visibility: hidden;
+}
+
+/* Reduce motion for accessibility */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/* Focus visible for better keyboard navigation */
+:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 3px;
+    border-radius: var(--radius-sm);
+}
+
+/* Remove default focus for mouse users */
+:focus:not(:focus-visible) {
+    outline: none;
+}
+
+/* Improved scrollbar styling */
+::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--bg-primary);
+    border-radius: var(--radius-sm);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: var(--radius-sm);
+    border: 2px solid var(--bg-primary);
+}
+
+
+/* Performance improvements for lists */
+.sessions-list,
+.favorites-list,
+.selected-practices {
+    contain: layout style paint;
+}
+
+/* Optimize reflows for animated elements */
+/* Add subtle animation for timer when running */
+@keyframes timerPulse {
+    0% { 
+        opacity: 1;
+        text-shadow: 0 0 20px var(--accent-light);
+    }
+    50% { 
+        opacity: 0.9;
+        text-shadow: 0 0 40px var(--accent-light);
+    }
+    100% { 
+        opacity: 1;
+        text-shadow: 0 0 20px var(--accent-light);
+    }
+}
+
+.timer-display.running {
+    animation: timerPulse 2s ease-in-out infinite;
+}
+
+.dragging {
+    position: fixed;
+    z-index: 1000;
+    pointer-events: none;
+}
+
+/* Loading screen styles */
+.loading-screen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: var(--bg-primary);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    transition: opacity 0.3s ease;
+}
+
+.loading-spinner {
+    width: 50px;
+    height: 50px;
+    border: 3px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    filter: drop-shadow(0 0 10px var(--accent-light));
+}
+
+.loading-text {
+    margin-top: 20px;
+    color: var(--text-secondary);
+    font-size: 1.1rem;
+    animation: fadeInOut 2s ease-in-out infinite;
+}
+
+@keyframes fadeInOut {
+    0%, 100% { opacity: 0.5; }
+    50% { opacity: 1; }
+}
