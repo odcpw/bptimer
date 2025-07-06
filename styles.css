@@ -136,7 +136,7 @@ button:disabled {
 }
 
 .timer-display {
-    font-size: clamp(4rem, 10vw, 6.5rem);
+    font-size: clamp(5rem, 15vw, 9rem);
     font-weight: 200;
     letter-spacing: 0.05em;
     margin-bottom: 24px;
@@ -402,7 +402,7 @@ button:focus:not(:focus-visible) {
     }
     
     .timer-display {
-        font-size: clamp(2.5rem, 10vw, 3.5rem);
+        font-size: clamp(4rem, 12vw, 6rem);
     }
     
     .timer-controls {
@@ -790,7 +790,7 @@ input[type="text"]:focus,
     border: 1px solid var(--border);
     border-radius: var(--radius-sm);
     margin-bottom: 8px;
-    cursor: move;
+    cursor: default;
     transition: var(--transition);
     position: relative;
     z-index: 1;
@@ -815,10 +815,19 @@ input[type="text"]:focus,
     margin-right: 10px;
     cursor: grab;
     user-select: none;
+    padding: 4px 8px;
+    border-radius: var(--radius-sm);
+    transition: var(--transition);
+}
+
+.drag-handle:hover {
+    background: var(--bg-secondary);
+    color: var(--accent);
 }
 
 .drag-handle:active {
     cursor: grabbing;
+    background: var(--bg-tertiary);
 }
 
 .practice-order {

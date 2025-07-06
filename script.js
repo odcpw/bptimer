@@ -2095,7 +2095,6 @@ class SessionBuilder {
         this.practices.forEach((practice, index) => {
             const item = document.createElement('div');
             item.className = 'selected-practice-item';
-            item.draggable = true;
             item.dataset.index = index;
             item.dataset.namespace = this.namespace;
             
@@ -2106,6 +2105,7 @@ class SessionBuilder {
             const handle = document.createElement('span');
             handle.className = 'drag-handle';
             handle.textContent = '≡';
+            handle.draggable = true;
             
             const order = document.createElement('span');
             order.className = 'practice-order';
@@ -2126,9 +2126,11 @@ class SessionBuilder {
             item.appendChild(content);
             item.appendChild(removeBtn);
             
-            // Add event listeners
-            item.addEventListener('dragstart', this.handleDragStart);
-            item.addEventListener('dragend', this.handleDragEnd);
+            // Add event listeners to the handle for dragging
+            handle.addEventListener('dragstart', (e) => this.handleDragStart(e, item));
+            handle.addEventListener('dragend', (e) => this.handleDragEnd(e, item));
+            
+            // Add event listeners to the item for drop target
             item.addEventListener('dragover', this.handleDragOver);
             item.addEventListener('drop', this.handleDrop);
             item.addEventListener('dragenter', this.handleDragEnter);
@@ -2177,16 +2179,16 @@ class SessionBuilder {
      * Drag and drop event handlers for practice reordering
      * Uses HTML5 drag and drop API
      */
-    handleDragStart(e) {
-        this.draggedElement = e.currentTarget;
-        this.draggedIndex = parseInt(e.currentTarget.dataset.index);
-        e.currentTarget.classList.add('dragging');
+    handleDragStart(e, item) {
+        this.draggedElement = item;
+        this.draggedIndex = parseInt(item.dataset.index);
+        item.classList.add('dragging');
         e.dataTransfer.effectAllowed = 'move';
-        e.dataTransfer.setData('text/html', e.currentTarget.innerHTML);
+        e.dataTransfer.setData('text/html', item.innerHTML);
     }
     
-    handleDragEnd(e) {
-        e.currentTarget.classList.remove('dragging');
+    handleDragEnd(e, item) {
+        item.classList.remove('dragging');
         this.practicesContainer.querySelectorAll('.selected-practice-item').forEach(item => {
             item.classList.remove('drag-over');
         });
