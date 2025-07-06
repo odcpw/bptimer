@@ -2049,12 +2049,21 @@ class SessionBuilder {
         this.handleDragEnter = this.handleDragEnter.bind(this);
         this.handleDragLeave = this.handleDragLeave.bind(this);
         
-        /** Bind pointer handlers for touch/mobile support */
+        /** 
+         * Bind pointer handlers for touch/mobile support
+         * Pointer Events provide unified handling for mouse, touch, and pen input
+         * Essential for drag-and-drop on mobile devices where HTML5 drag doesn't work
+         */
         this.handlePointerDown = this.handlePointerDown.bind(this);
         this.handlePointerMove = this.handlePointerMove.bind(this);
         this.handlePointerUp = this.handlePointerUp.bind(this);
         
-        /** Track pointer drag state */
+        /** 
+         * Track pointer drag state for mobile drag operations
+         * pointerDragging: Whether a touch/pointer drag is in progress
+         * pointerStartY: Initial Y coordinate for drag threshold detection
+         * draggedClone: Reference to visual clone during drag (unused in current implementation)
+         */
         this.pointerDragging = false;
         this.pointerStartY = 0;
         this.draggedClone = null;
@@ -2114,9 +2123,18 @@ class SessionBuilder {
             handle.className = 'drag-handle';
             handle.textContent = '≡';
             
-            // Add pointer events for touch support
+            /** 
+             * Add pointer events for touch/mobile support
+             * Pointer Events API works with mouse, touch, and pen input
+             * This enables drag-and-drop on mobile devices where HTML5 drag doesn't work
+             */
             handle.addEventListener('pointerdown', (e) => this.handlePointerDown(e, item));
-            // Prevent default touch behavior on handle
+            
+            /** 
+             * Prevent default touch behavior specifically on the drag handle
+             * This stops scrolling when user touches the handle, but allows scrolling elsewhere
+             * passive: false is required to call preventDefault() in Chrome
+             */
             handle.addEventListener('touchstart', (e) => e.preventDefault(), { passive: false });
             
             const order = document.createElement('span');
@@ -2138,10 +2156,16 @@ class SessionBuilder {
             item.appendChild(content);
             item.appendChild(removeBtn);
             
-            // Make the entire item draggable
+            /** 
+             * HTML5 Drag and Drop setup for desktop browsers
+             * This provides native drag behavior on desktop while Pointer Events handle mobile
+             */
             item.draggable = true;
             
-            // Add event listeners to the item for dragging
+            /** 
+             * Add HTML5 drag event listeners for desktop functionality
+             * These work alongside Pointer Events to provide cross-platform support
+             */
             item.addEventListener('dragstart', this.handleDragStart);
             item.addEventListener('dragend', this.handleDragEnd);
             item.addEventListener('dragover', this.handleDragOver);

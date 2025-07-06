@@ -761,7 +761,9 @@ input[type="text"]:focus,
     background: var(--bg-secondary);
     position: relative;
     overflow: hidden;
+    /* Prevent overscroll effects like pull-to-refresh on mobile */
     overscroll-behavior: contain;
+    /* Enable momentum scrolling on iOS */
     -webkit-overflow-scrolling: touch;
 }
 
@@ -803,7 +805,9 @@ input[type="text"]:focus,
     opacity: 0.5;
     transform: scale(0.95);
     box-shadow: var(--shadow-lg);
+    /* Prevent the dragged item from interfering with hover detection */
     pointer-events: none;
+    /* Ensure dragged item appears above others */
     z-index: 1000;
 }
 
@@ -819,6 +823,7 @@ input[type="text"]:focus,
     color: var(--text-secondary);
     margin-right: 10px;
     cursor: grab;
+    /* Prevent text selection during drag */
     user-select: none;
     -webkit-user-select: none;
     -moz-user-select: none;
@@ -826,8 +831,11 @@ input[type="text"]:focus,
     padding: 4px 8px;
     border-radius: var(--radius-sm);
     transition: var(--transition);
+    /* Critical: Prevents scrolling when touching the drag handle */
     touch-action: none;
+    /* Prevent iOS context menu on long press */
     -webkit-touch-callout: none;
+    /* Prevent native image dragging behavior */
     -webkit-user-drag: none;
 }
 
