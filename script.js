@@ -94,28 +94,46 @@ const CATEGORY_COLORS = {
 };
 
 /**
- * Get the category for a given practice name
- * @param {string} practiceName - Name of the practice
- * @returns {string} Category key (mindfulness, compassion, etc.)
+ * Practice category lookup map for O(1) performance
+ * Built once on initialization from PRACTICE_CONFIG
+ * Maps practice name -> category key
  */
-function getCategoryForPractice(practiceName) {
+const PRACTICE_CATEGORY_MAP = new Map();
+
+/**
+ * Build reverse lookup map for practice categories
+ * Called once on initialization for O(1) lookups
+ */
+function buildPracticeCategoryMap() {
     for (const [categoryKey, category] of Object.entries(PRACTICE_CONFIG)) {
-        // Check if practice exists directly in category
-        if (category.practices.hasOwnProperty(practiceName)) {
-            return categoryKey;
-        }
-        // Check in subcategories
-        for (const [practice, subcategories] of Object.entries(category.practices)) {
+        // Map direct practices
+        for (const practiceName of Object.keys(category.practices)) {
+            PRACTICE_CATEGORY_MAP.set(practiceName, categoryKey);
+            
+            // Map subcategory practices
+            const subcategories = category.practices[practiceName];
             if (subcategories && typeof subcategories === 'object') {
                 for (const options of Object.values(subcategories)) {
-                    if (Array.isArray(options) && options.includes(practiceName)) {
-                        return categoryKey;
+                    if (Array.isArray(options)) {
+                        options.forEach(option => PRACTICE_CATEGORY_MAP.set(option, categoryKey));
                     }
                 }
             }
         }
     }
-    return 'wiseReflection'; // Default fallback
+}
+
+// Build the map immediately
+buildPracticeCategoryMap();
+
+/**
+ * Get the category for a given practice name
+ * Uses pre-built map for O(1) lookup performance
+ * @param {string} practiceName - Name of the practice
+ * @returns {string} Category key (mindfulness, compassion, etc.)
+ */
+function getCategoryForPractice(practiceName) {
+    return PRACTICE_CATEGORY_MAP.get(practiceName) || 'wiseReflection';
 }
 
 /**
@@ -733,6 +751,59 @@ class MeditationTimerApp {
     }
     
     /**
+     * Efficient DOM manipulation helpers to avoid innerHTML
+     * These methods prevent forced reflows and improve performance
+     */
+    
+    /**
+     * Clear all children from an element efficiently
+     * @param {Element} element - DOM element to clear
+     */
+    clearElement(element) {
+        while (element.firstChild) {
+            element.removeChild(element.firstChild);
+        }
+    }
+    
+    /**
+     * Replace element content with fragment efficiently
+     * @param {Element} element - DOM element to update
+     * @param {DocumentFragment} fragment - New content
+     */
+    replaceElementContent(element, fragment) {
+        this.clearElement(element);
+        element.appendChild(fragment);
+    }
+    
+    /**
+     * Set stats content with predefined templates
+     * Avoids innerHTML for common statistics states
+     * @param {string} state - 'loading', 'offline', 'empty'
+     */
+    setStatsContent(state) {
+        this.clearElement(this.elements.statsContent);
+        
+        if (state === 'loading') {
+            const spinner = document.createElement('div');
+            spinner.className = 'spinner';
+            const text = document.createElement('p');
+            text.textContent = 'Loading statistics...';
+            this.elements.statsContent.appendChild(spinner);
+            this.elements.statsContent.appendChild(text);
+        } else if (state === 'offline') {
+            const message = document.createElement('p');
+            message.className = 'empty-message';
+            message.textContent = 'Unable to load charts offline';
+            this.elements.statsContent.appendChild(message);
+        } else if (state === 'empty') {
+            const message = document.createElement('p');
+            message.className = 'empty-message';
+            message.textContent = 'No sessions in this period';
+            this.elements.statsContent.appendChild(message);
+        }
+    }
+    
+    /**
      * Display toast notifications to user
      * @param {string} message - Message to display
      * @param {string} type - Notification type: 'info', 'success', 'error'
@@ -1013,7 +1084,7 @@ class MeditationTimerApp {
             fragment.appendChild(item);
         });
         
-        this.elements.sessionPracticesList.innerHTML = '';
+        this.clearElement(this.elements.sessionPracticesList);
         this.elements.sessionPracticesList.appendChild(fragment);
     }
     
@@ -1099,7 +1170,7 @@ class MeditationTimerApp {
             });
         }
         
-        this.elements.favoritesList.innerHTML = '';
+        this.clearElement(this.elements.favoritesList);
         this.elements.favoritesList.appendChild(fragment);
     }
     
@@ -1304,8 +1375,7 @@ class MeditationTimerApp {
             });
         }
         
-        this.elements.recentSessionsList.innerHTML = '';
-        this.elements.recentSessionsList.appendChild(fragment);
+        this.replaceElementContent(this.elements.recentSessionsList, fragment);
     }
     
     /**
@@ -1314,7 +1384,7 @@ class MeditationTimerApp {
      */
     async loadStatistics() {
         /** Display loading spinner while fetching data */
-        this.elements.statsContent.innerHTML = '<div class="spinner"></div><p>Loading statistics...</p>';
+        this.setStatsContent('loading');
         
         /** Lazy load Chart.js library from CDN on first statistics view */
         if (!this.state.app.chartLoaded) {
@@ -1323,7 +1393,7 @@ class MeditationTimerApp {
                 this.state.app.chartLoaded = true;
             } catch (error) {
                 this.showToast('Failed to load charts. Check your connection.', 'error');
-                this.elements.statsContent.innerHTML = '<p class="empty-message">Unable to load charts offline</p>';
+                this.setStatsContent('offline');
                 return;
             }
         }
@@ -1331,20 +1401,95 @@ class MeditationTimerApp {
         const sessions = await this.getSessionsForPeriod(this.state.app.selectedPeriod);
         
         if (sessions.length === 0) {
-            this.elements.statsContent.innerHTML = '<p class="empty-message">No sessions in this period</p>';
+            this.setStatsContent('empty');
             return;
         }
         
-        this.elements.statsContent.innerHTML = '';
+        /** Process all statistics data in a single pass */
+        const statsData = this.processStatisticsData(sessions);
+        
+        this.clearElement(this.elements.statsContent);
         
         /** Use requestAnimationFrame for smooth chart rendering */
         requestAnimationFrame(() => {
-            this.createCalendarView(sessions);
-            this.createPracticeDistribution(sessions);
-            this.createCategoryTrendChart(sessions);
-            this.createPostureChart(sessions);
-            this.createTimeChart(sessions);
+            this.createCalendarViewOptimized(statsData.sessionsByDate, this.state.app.selectedPeriod);
+            this.createPracticeDistributionOptimized(statsData.practiceCounts);
+            this.createCategoryTrendChartOptimized(statsData.dateData);
+            this.createPostureChartOptimized(statsData.postureCounts, sessions.length);
+            this.createTimeChartOptimized(statsData.durationsByDate);
         });
+    }
+    
+    /**
+     * Process all statistics data in a single pass through sessions
+     * Eliminates multiple iterations for better performance
+     * @param {Array} sessions - Sessions to process
+     * @returns {Object} Aggregated statistics data
+     */
+    processStatisticsData(sessions) {
+        const sessionsByDate = {};
+        const practiceCounts = {};
+        const dateData = {};
+        const postureCounts = { Sitting: 0, Walking: 0, Standing: 0, Lying: 0 };
+        const durationsByDate = {};
+        
+        /** Single pass through all sessions */
+        sessions.forEach(session => {
+            const dateString = new Date(session.date).toDateString();
+            const localeDateString = new Date(session.date).toLocaleDateString();
+            
+            /** Calendar data */
+            if (!sessionsByDate[dateString]) {
+                sessionsByDate[dateString] = [];
+            }
+            sessionsByDate[dateString].push(session);
+            
+            /** Duration data */
+            if (!durationsByDate[localeDateString]) {
+                durationsByDate[localeDateString] = [];
+            }
+            durationsByDate[localeDateString].push(Math.floor(session.duration / 60));
+            
+            /** Posture data */
+            if (session.posture && postureCounts.hasOwnProperty(session.posture)) {
+                postureCounts[session.posture]++;
+            }
+            
+            /** Practice and category data */
+            const practices = session.practices || [session.practice];
+            
+            /** Initialize date data for category trends */
+            if (!dateData[localeDateString]) {
+                dateData[localeDateString] = {
+                    mindfulness: 0,
+                    compassion: 0,
+                    sympatheticJoy: 0,
+                    equanimity: 0,
+                    wiseReflection: 0,
+                    total: 0
+                };
+            }
+            
+            practices.forEach(practice => {
+                if (practice) {
+                    /** Practice counts */
+                    practiceCounts[practice] = (practiceCounts[practice] || 0) + 1;
+                    
+                    /** Category counts for trends */
+                    const category = getCategoryForPractice(practice);
+                    dateData[localeDateString][category] = (dateData[localeDateString][category] || 0) + 1;
+                    dateData[localeDateString].total += 1;
+                }
+            });
+        });
+        
+        return {
+            sessionsByDate,
+            practiceCounts,
+            dateData,
+            postureCounts,
+            durationsByDate
+        };
     }
     
     /**
@@ -1422,6 +1567,7 @@ class MeditationTimerApp {
     
     /**
      * Query IndexedDB for sessions after specified date
+     * Uses getAll() for better performance than cursor iteration
      * @param {Date} startDate - Start date for session query
      * @returns {Promise<Array>} Array of session objects
      */
@@ -1431,17 +1577,12 @@ class MeditationTimerApp {
             const store = transaction.objectStore('sessions');
             const index = store.index('date');
             const range = IDBKeyRange.lowerBound(startDate.toISOString());
-            const sessions = [];
             
-            const request = index.openCursor(range);
+            /** Use getAll() for efficient bulk retrieval */
+            const request = index.getAll(range);
+            
             request.onsuccess = (event) => {
-                const cursor = event.target.result;
-                if (cursor) {
-                    sessions.push(cursor.value);
-                    cursor.continue();
-                } else {
-                    resolve(sessions);
-                }
+                resolve(event.target.result || []);
             };
             
             request.onerror = () => {
@@ -1462,11 +1603,11 @@ class MeditationTimerApp {
     }
     
     /**
-     * Create calendar grid visualization showing daily practice status
-     * Displays practice days with duration in minutes
-     * @param {Array} sessions - Sessions to visualize
+     * Create calendar grid visualization from pre-processed data
+     * @param {Object} sessionsByDate - Sessions grouped by date
+     * @param {string} period - Selected period
      */
-    createCalendarView(sessions) {
+    createCalendarViewOptimized(sessionsByDate, period) {
         const card = document.createElement('div');
         card.className = 'stat-card';
         
@@ -1477,19 +1618,10 @@ class MeditationTimerApp {
         const grid = document.createElement('div');
         grid.className = 'calendar-grid';
         
-        /** Aggregate sessions by date for calendar display */
-        const sessionsByDate = {};
-        sessions.forEach(session => {
-            const date = new Date(session.date).toDateString();
-            if (!sessionsByDate[date]) {
-                sessionsByDate[date] = [];
-            }
-            sessionsByDate[date].push(session);
-        });
+        /** Sessions already aggregated by processStatisticsData */
         
         /** Generate calendar grid for selected period */
-        const days = this.state.app.selectedPeriod === 'week' ? 7 : 
-                    this.state.app.selectedPeriod === 'fortnight' ? 14 : 30;
+        const days = period === 'week' ? 7 : period === 'fortnight' ? 14 : 30;
         
         const fragment = document.createDocumentFragment();
         
@@ -1531,10 +1663,10 @@ class MeditationTimerApp {
     }
     
     /**
-     * Create horizontal bar chart showing practice type distribution
-     * @param {Array} sessions - Sessions to analyze
+     * Create horizontal bar chart from pre-processed practice counts
+     * @param {Object} practiceCounts - Practice count data
      */
-    createPracticeDistribution(sessions) {
+    createPracticeDistributionOptimized(practiceCounts) {
         const card = document.createElement('div');
         card.className = 'stat-card';
         
@@ -1542,16 +1674,7 @@ class MeditationTimerApp {
         title.textContent = 'Practice Distribution';
         card.appendChild(title);
         
-        /** Aggregate practice counts across all sessions */
-        const practiceCounts = {};
-        sessions.forEach(session => {
-            const practices = session.practices || [session.practice];
-            practices.forEach(practice => {
-                if (practice) {
-                    practiceCounts[practice] = (practiceCounts[practice] || 0) + 1;
-                }
-            });
-        });
+        /** Practice counts already aggregated by processStatisticsData */
         
         // Sort practices by count (descending)
         const sortedPractices = Object.entries(practiceCounts)
@@ -1620,10 +1743,10 @@ class MeditationTimerApp {
     }
     
     /**
-     * Create stacked area chart showing category trends over time
-     * @param {Array} sessions - Sessions to analyze
+     * Create stacked area chart from pre-processed date data
+     * @param {Object} dateData - Category data by date
      */
-    createCategoryTrendChart(sessions) {
+    createCategoryTrendChartOptimized(dateData) {
         const card = document.createElement('div');
         card.className = 'stat-card';
         
@@ -1631,30 +1754,7 @@ class MeditationTimerApp {
         title.textContent = 'Practice Category Trends';
         card.appendChild(title);
         
-        // Group sessions by date and aggregate category data
-        const dateData = {};
-        sessions.forEach(session => {
-            const date = new Date(session.date).toLocaleDateString();
-            if (!dateData[date]) {
-                dateData[date] = {
-                    mindfulness: 0,
-                    compassion: 0,
-                    sympatheticJoy: 0,
-                    equanimity: 0,
-                    wiseReflection: 0,
-                    total: 0
-                };
-            }
-            
-            const practices = session.practices || [session.practice];
-            practices.forEach(practice => {
-                if (practice) {
-                    const category = getCategoryForPractice(practice);
-                    dateData[date][category] = (dateData[date][category] || 0) + 1;
-                    dateData[date].total += 1;
-                }
-            });
-        });
+        /** Date data already aggregated by processStatisticsData */
         
         // Sort dates and calculate percentages
         const sortedDates = Object.keys(dateData).sort((a, b) => new Date(a) - new Date(b));
@@ -1752,7 +1852,12 @@ class MeditationTimerApp {
         this.elements.statsContent.appendChild(card);
     }
     
-    createPostureChart(sessions) {
+    /**
+     * Create posture chart from pre-processed counts
+     * @param {Object} postureCounts - Posture count data
+     * @param {number} totalSessions - Total number of sessions
+     */
+    createPostureChartOptimized(postureCounts, totalSessions) {
         const card = document.createElement('div');
         card.className = 'stat-card';
         
@@ -1760,12 +1865,7 @@ class MeditationTimerApp {
         title.textContent = 'Posture Distribution';
         card.appendChild(title);
         
-        // Count postures
-        const postureCounts = {};
-        sessions.forEach(session => {
-            const posture = session.posture || 'Sitting';
-            postureCounts[posture] = (postureCounts[posture] || 0) + 1;
-        });
+        /** Posture counts already aggregated by processStatisticsData */
         
         // Create chart
         const chartContainer = document.createElement('div');
@@ -1823,7 +1923,11 @@ class MeditationTimerApp {
         this.elements.statsContent.appendChild(card);
     }
     
-    createTimeChart(sessions) {
+    /**
+     * Create time chart from pre-processed duration data
+     * @param {Object} durationsByDate - Duration data by date
+     */
+    createTimeChartOptimized(durationsByDate) {
         const card = document.createElement('div');
         card.className = 'stat-card';
         
@@ -1831,15 +1935,7 @@ class MeditationTimerApp {
         title.textContent = 'Session Duration Trend';
         card.appendChild(title);
         
-        // Group by date and calculate average duration
-        const durationsByDate = {};
-        sessions.forEach(session => {
-            const date = new Date(session.date).toLocaleDateString();
-            if (!durationsByDate[date]) {
-                durationsByDate[date] = [];
-            }
-            durationsByDate[date].push(Math.floor(session.duration / 60));
-        });
+        /** Duration data already aggregated by processStatisticsData */
         
         const dates = Object.keys(durationsByDate).sort();
         const avgDurations = dates.map(date => {
@@ -2044,6 +2140,8 @@ class SessionBuilder {
         this.namespace = config.namespace || 'session';
         
         /** Bind drag handlers to maintain correct 'this' context */
+        this.handleDragStart = this.handleDragStart.bind(this);
+        this.handleDragEnd = this.handleDragEnd.bind(this);
         this.handleDragOver = this.handleDragOver.bind(this);
         this.handleDrop = this.handleDrop.bind(this);
         this.handleDragEnter = this.handleDragEnter.bind(this);
@@ -2068,6 +2166,13 @@ class SessionBuilder {
         this.pointerStartY = 0;
         this.draggedClone = null;
         
+        /**
+         * Track active event listeners for cleanup
+         * Prevents memory leaks by removing listeners before DOM updates
+         * Maps element -> array of {type, handler} objects
+         */
+        this.activeListeners = new WeakMap();
+        
         /** Initialize posture buttons and practice list */
         this.initializePostureButtons();
         this.updatePracticesList();
@@ -2087,7 +2192,9 @@ class SessionBuilder {
             fragment.appendChild(btn);
         });
         
-        this.postureContainer.innerHTML = '';
+        while (this.postureContainer.firstChild) {
+            this.postureContainer.removeChild(this.postureContainer.firstChild);
+        }
         this.postureContainer.appendChild(fragment);
     }
     
@@ -2102,8 +2209,14 @@ class SessionBuilder {
     updatePracticesList() {
         if (!this.practicesContainer) return;
         
+        /** Clean up all existing event listeners before clearing DOM */
+        this.cleanupEventListeners();
+        
         if (this.practices.length === 0) {
-            this.practicesContainer.innerHTML = '<p class="empty-message">No practices selected</p>';
+            const message = document.createElement('p');
+            message.className = 'empty-message';
+            message.textContent = 'No practices selected';
+            this.practicesContainer.appendChild(message);
             return;
         }
         
@@ -2128,14 +2241,17 @@ class SessionBuilder {
              * Pointer Events API works with mouse, touch, and pen input
              * This enables drag-and-drop on mobile devices where HTML5 drag doesn't work
              */
-            handle.addEventListener('pointerdown', (e) => this.handlePointerDown(e, item));
+            const pointerHandler = (e) => this.handlePointerDown(e, item);
+            const touchHandler = (e) => e.preventDefault();
+            
+            this.addEventListenerWithTracking(handle, 'pointerdown', pointerHandler);
             
             /** 
              * Prevent default touch behavior specifically on the drag handle
              * This stops scrolling when user touches the handle, but allows scrolling elsewhere
              * passive: false is required to call preventDefault() in Chrome
              */
-            handle.addEventListener('touchstart', (e) => e.preventDefault(), { passive: false });
+            this.addEventListenerWithTracking(handle, 'touchstart', touchHandler, { passive: false });
             
             const order = document.createElement('span');
             order.className = 'practice-order';
@@ -2165,19 +2281,70 @@ class SessionBuilder {
             /** 
              * Add HTML5 drag event listeners for desktop functionality
              * These work alongside Pointer Events to provide cross-platform support
+             * All listeners are tracked for proper cleanup
              */
-            item.addEventListener('dragstart', this.handleDragStart);
-            item.addEventListener('dragend', this.handleDragEnd);
-            item.addEventListener('dragover', this.handleDragOver);
-            item.addEventListener('drop', this.handleDrop);
-            item.addEventListener('dragenter', this.handleDragEnter);
-            item.addEventListener('dragleave', this.handleDragLeave);
+            this.addEventListenerWithTracking(item, 'dragstart', this.handleDragStart);
+            this.addEventListenerWithTracking(item, 'dragend', this.handleDragEnd);
+            this.addEventListenerWithTracking(item, 'dragover', this.handleDragOver);
+            this.addEventListenerWithTracking(item, 'drop', this.handleDrop);
+            this.addEventListenerWithTracking(item, 'dragenter', this.handleDragEnter);
+            this.addEventListenerWithTracking(item, 'dragleave', this.handleDragLeave);
             
             fragment.appendChild(item);
         });
         
-        this.practicesContainer.innerHTML = '';
+        while (this.practicesContainer.firstChild) {
+            this.practicesContainer.removeChild(this.practicesContainer.firstChild);
+        }
         this.practicesContainer.appendChild(fragment);
+    }
+    
+    /**
+     * Add event listener with tracking for cleanup
+     * Stores reference to enable proper removal later
+     * @param {Element} element - DOM element
+     * @param {string} type - Event type
+     * @param {Function} handler - Event handler
+     * @param {Object} options - Event listener options
+     */
+    addEventListenerWithTracking(element, type, handler, options) {
+        element.addEventListener(type, handler, options);
+        
+        /** Store listener info for cleanup */
+        if (!this.activeListeners.has(element)) {
+            this.activeListeners.set(element, []);
+        }
+        this.activeListeners.get(element).push({ type, handler, options });
+    }
+    
+    /**
+     * Clean up all tracked event listeners
+     * Prevents memory leaks when DOM is updated
+     */
+    cleanupEventListeners() {
+        const items = this.practicesContainer.querySelectorAll('.selected-practice-item');
+        items.forEach(item => {
+            /** Remove tracked listeners from the item */
+            const listeners = this.activeListeners.get(item);
+            if (listeners) {
+                listeners.forEach(({ type, handler, options }) => {
+                    item.removeEventListener(type, handler, options);
+                });
+                this.activeListeners.delete(item);
+            }
+            
+            /** Also clean up handle listeners */
+            const handle = item.querySelector('.drag-handle');
+            if (handle) {
+                const handleListeners = this.activeListeners.get(handle);
+                if (handleListeners) {
+                    handleListeners.forEach(({ type, handler, options }) => {
+                        handle.removeEventListener(type, handler, options);
+                    });
+                    this.activeListeners.delete(handle);
+                }
+            }
+        });
     }
     
     addPractice(practice) {
@@ -2208,7 +2375,9 @@ class SessionBuilder {
             categoriesDiv.appendChild(categoryClone);
         });
         
-        this.practiceSelector.innerHTML = '';
+        while (this.practiceSelector.firstChild) {
+            this.practiceSelector.removeChild(this.practiceSelector.firstChild);
+        }
         this.practiceSelector.appendChild(categoriesDiv);
     }
     
@@ -2357,9 +2526,16 @@ class SessionBuilder {
      * Clean up references for garbage collection
      */
     destroy() {
+        /** Clean up all event listeners first */
+        this.cleanupEventListeners();
+        
         /** Clear references to prevent memory leaks */
         this.practices = [];
         this.onUpdate = null;
+        this.practicesContainer = null;
+        this.postureContainer = null;
+        this.practiceSelector = null;
+        this.activeListeners = null;
     }
     
     /**
@@ -2502,7 +2678,7 @@ function createCategoryElement(key, category, onPracticeClick) {
             if (PRACTICE_DESCRIPTIONS[practiceName]) {
                 const infoBtn = document.createElement('button');
                 infoBtn.className = 'practice-info-btn';
-                infoBtn.innerHTML = 'ℹ️';
+                infoBtn.textContent = 'ℹ️';
                 infoBtn.title = 'View practice information';
                 infoBtn.onclick = (e) => {
                     e.stopPropagation();
@@ -2574,7 +2750,7 @@ function createSubcategoryElement(name, subPractices, onPracticeClick) {
             if (PRACTICE_DESCRIPTIONS[practice]) {
                 const infoBtn = document.createElement('button');
                 infoBtn.className = 'practice-info-btn';
-                infoBtn.innerHTML = 'ℹ️';
+                infoBtn.textContent = 'ℹ️';
                 infoBtn.title = 'View practice information';
                 infoBtn.onclick = (e) => {
                     e.stopPropagation();
@@ -2602,7 +2778,7 @@ function createSubcategoryElement(name, subPractices, onPracticeClick) {
                 if (PRACTICE_DESCRIPTIONS[subName]) {
                     const infoBtn = document.createElement('button');
                     infoBtn.className = 'practice-info-btn';
-                    infoBtn.innerHTML = 'ℹ️';
+                    infoBtn.textContent = 'ℹ️';
                     infoBtn.title = 'View practice information';
                     infoBtn.onclick = (e) => {
                         e.stopPropagation();
@@ -2649,6 +2825,7 @@ function showPracticeInfo(practiceName) {
     const contentEl = document.getElementById('practiceInfoContent');
     
     titleEl.textContent = info.title;
+    /** Use innerHTML only for trusted content with HTML markup */
     contentEl.innerHTML = info.content;
     
     modal.style.display = 'flex';
