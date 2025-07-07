@@ -1,23 +1,6 @@
-# BPtimer (Balanced Practice Timer) - Implementation Complete ✅
+# BPtimer (Balanced Practice Timer)
 
-## Project Status
-BPtimer is a meditation timer app designed to help practitioners maintain a balanced meditation/mental development practice. All 5 phases have been successfully implemented as a fully functional Progressive Web App with offline capabilities.
-
-## Practice Restructuring Plan (2025-07-06)
-
-### Phase 1: Practice Names Restructuring (In Progress)
-Updating PRACTICE_CONFIG to match meditationtopics.md structure:
-- **Mindfulness**: Walking Meditation, Hindrances, Physical Sensations, Four Foundations
-- **Compassion/Lovingkindness**: Multiple techniques including D/D, Life Review, Forgiveness, etc.
-- **Sympathetic Joy**: Basic practice
-- **Equanimity**: Basic practice
-- **Wise Reflection**: 15+ practices including Food Reflection, Ten Paramis, Five Daily Recollections, etc.
-
-### Phase 2: Info Feature (Future)
-- Add (i) info button next to each practice name
-- Store full practice descriptions from meditationtopics.md
-- Display descriptions in modal when info button clicked
-- Enable users to understand practices before selecting them
+BPtimer is a meditation timer app designed to help practitioners maintain a balanced meditation/mental development practice. It's implemented as a fully functional Progressive Web App with offline capabilities.
 
 ## GitHub Deployment Note
 **IMPORTANT**: When the user asks to "push changes", this means:
@@ -46,14 +29,16 @@ Only push changes when explicitly requested by the user. The phrase "push change
 
 ## Implementation Details
 
-### Practice Configuration (script.js:15-81)
+### Practice Configuration
 All practice categories are defined in the `PRACTICE_CONFIG` object. To add/modify practices:
 ```javascript
 const PRACTICE_CONFIG = {
     categoryKey: {
         name: 'Display Name',
         practices: {
-            'Practice Name': null,  // Simple practice
+            'Practice Name': {
+                info: 'Brief description of the practice'
+            },
             'Practice with Subs': {  // Hierarchical practice
                 'Subcategory': ['Option 1', 'Option 2']
             }
@@ -63,14 +48,14 @@ const PRACTICE_CONFIG = {
 ```
 
 ### State Management
-- `timerState` (script.js:382-398) - Timer-specific state within MeditationTimerApp constructor
-- `appState` (script.js:399-408) - App-wide settings and UI state within MeditationTimerApp constructor
+- `timerState` - Timer-specific state within MeditationTimerApp constructor
+- `appState` - App-wide settings and UI state within MeditationTimerApp constructor
 - localStorage - Settings, favorites, recent sessions
 - IndexedDB - Full session history
 
 ### Key Features Implementation
 
-#### SessionBuilder Component (script.js:1818-2056)
+#### SessionBuilder Component
 - **Unified component** for both session planning and post-session recording
 - Handles practice selection, ordering, and drag-and-drop reordering
 - Manages posture selection
@@ -106,7 +91,7 @@ const PRACTICE_CONFIG = {
 ## Maintenance Guide
 
 ### Adding New Practices
-1. Edit `PRACTICE_CONFIG` object in script.js:15
+1. Edit `PRACTICE_CONFIG` object in script.js
 2. Follow existing structure for categories/subcategories
 3. No other code changes needed - UI updates automatically
 
