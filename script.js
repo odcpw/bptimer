@@ -10,73 +10,136 @@
 
 /**
  * PRACTICE_CONFIG - Central configuration object for all meditation practices
- * Structure: categoryKey -> { name, practices: { practiceName -> null or subcategories } }
+ * Structure: categoryKey -> { name, practices: { practiceName -> null or {info: string} } }
  * This object defines the entire practice hierarchy shown in the UI
+ * Info text provides detailed instructions for practices where available
  */
 const PRACTICE_CONFIG = {
     mindfulness: {
         name: 'Mindfulness',
         practices: {
-            'Walking Meditation': null,
-            'Mindfulness & Investigation of Hindrances': null,
-            'Working with Physical Sensations': null,
-            'Four Foundations of Mindfulness': null
+            'Walking Meditation': {
+                info: 'For formal walking meditation, limit the track to 20-30 paces. Sleepiness: walk quicker with broader awareness. Restlessness: walk slower, observing sensations closely. Anger: walk gently, observing the effect on footsteps.'
+            },
+            'Mindfulness & Investigation of Hindrances': {
+                info: 'First note the hindrance (e.g., "Desire, Desire"). If it persists, investigate by observing its manifestation in the body - tension, tightness, etc. Observe without feeding the hindrance until it passes.'
+            },
+            'Working with Physical Sensations': {
+                info: 'First treat like wandering thoughts. If aversion develops, observe the sensation\'s characteristics. When aversion is strong, observe its physical manifestations throughout the body. Work gently within your limits.'
+            },
+            'Four Foundations of Mindfulness': {
+                info: 'The Satipatthana Sutta framework: 1) Body (breath, postures, activities, elements), 2) Feelings (pleasant/unpleasant/neutral), 3) States of Mind, 4) Mind Objects (hindrances, aggregates, enlightenment factors, noble truths).'
+            }
         }
     },
     compassion: {
         name: 'Compassion/Lovingkindness',
         practices: {
-            'Basic Practice': null,
-            'Diffusing/Defusing (D/D)': null,
-            'By Age': null,
-            'Going Through Your Life': null,
-            'Going to Bed Sequence': null,
-            'For Difficult Situations': null,
-            'Everyday Life Activities': null,
-            'Material Objects Reflection': null,
-            'Groups by Countries': null,
-            '1-10-11-1 Exercise': null,
-            'Classify by Body Types': null,
-            'Waking Up Practice': null,
-            'Forgiveness Meditation': null
+            'Basic Practice': {
+                info: 'May [person] be able to learn and develop methods of mental development to cope with life\'s challenges. May they find Peace of Mind.'
+            },
+            'Forgiveness Meditation': {
+                info: 'Systematic practice for self-forgiveness and forgiving others. Analyze past actions objectively, understanding the causes, then forgive with phrases like "I forgive the person I was."'
+            },
+            'Going Through Your Life': {
+                info: 'Systematic life review: Start young, go through home, school, activities year by year until today. Give yourself and others compassion wishes at each stage.'
+            },
+            'Diffusing/Defusing (D/D)': {
+                info: 'Take an unpleasant emotion, universalize it by considering others who experience it intensely. Develop compassion for all beings experiencing this suffering.'
+            },
+            'By Age': {
+                info: 'Choose a particular age in your life, give compassion to yourself at that age, then universalize to others of the same age doing similar activities.'
+            },
+            '1-10-11-1 Exercise': {
+                info: 'Visualize: 1 person with similar difficulties, then 10 people, then all 11 including yourself, then just yourself. Develop compassion at each stage.'
+            },
+            'Going to Bed Sequence': {
+                info: 'Progressive circles: yourself, closest person, all beings met today, a group from your past, a group from the world, all beings.'
+            },
+            'Waking Up Practice': {
+                info: 'Identify with real situations of others waking up as different people, universalizing the experience and developing compassion.'
+            },
+            'Groups by Countries': {
+                info: 'Systematically go through groups of countries, then humanity as a whole, then self as part of humanity, then self.'
+            },
+            'Everyday Life Activities': {
+                info: 'Before eating: consider beings that suffered for your food. Before cleaning: wish lovingkindness to any beings that may be harmed.'
+            },
+            'Material Objects Reflection': {
+                info: 'Reflect on an object\'s dependent arising nature. Trace to origin, consider beings that suffered to make it. Develop compassion for all.'
+            },
+            'Classify by Body Types': {
+                info: 'Systematic classification: no legs, 1 leg, 2 legs, etc., beings with wings, in ocean, unseen beings. Compassion for all.'
+            }
         }
     },
     sympatheticJoy: {
         name: 'Sympathetic Joy',
         practices: {
-            'Basic Practice': null,
-            'Remembering Good Qualities': null
+            'Basic Practice': {
+                info: 'In times of discouragement, may they remember their good qualities. Take joy in their gradual awakening and inner potential.'
+            },
+            'Remembering Good Qualities': {
+                info: 'May they feel happiness within and continue making good decisions. When failing, may they remember when their resolutions were strong.'
+            }
         }
     },
     equanimity: {
         name: 'Equanimity',
         practices: {
-            'Basic Practice': null,
-            'Kamma Reflection': null
+            'Basic Practice': {
+                info: 'Reflect that everything that comes is the result of preceding causes. They are the owner of their kamma. This understanding brings equanimity.'
+            },
+            'Kamma Reflection': {
+                info: 'They will receive the results of their own kamma. I may not have the power to change this. Understanding this brings equanimity.'
+            }
         }
     },
     wiseReflection: {
         name: 'Wise Reflection',
         practices: {
-            'Food Reflection': null,
-            'Transformative Attitude': null,
-            'Ten Paramis': null,
-            'Alavaka\'s Questions': null,
-            'Four Assurances': null,
-            'Dedication of Merit': null,
-            'Dedication of Direction': null,
-            'Five Reflections': null,
-            'Five Daily Recollections': null,
-            'Origination and Dissolution': null,
-            'Seven Reflections': null,
-            'Four Great Efforts': null,
-            'Noble Eightfold Path': null,
-            'Eight Worldly Dhammas': null,
-            'Death Reflection': null,
-            'How Fortunate You Are': null,
-            'Dukkha Contemplation': null,
-            'Impermanence': null,
-            'Actions and Results': null
+            'Five Daily Recollections': {
+                info: 'Traditional contemplations: 1) I am of the nature to decay, 2) to be diseased, 3) to die, 4) All dear will change and vanish, 5) I am the owner of my kamma.'
+            },
+            'Seven Reflections': {
+                info: '1) How fortunate I am, 2) Death, 3) Actions and Results, 4) Dukkha, 5) Impermanence, 6) No problems only challenges, 7) Compassion and Equanimity.'
+            },
+            'Death Reflection': {
+                info: 'Think of someone who died. Picture them alive, then remember they are gone. Apply this awareness to yourself: you too will die one day.'
+            },
+            'Food Reflection': {
+                info: 'Three contemplations during meals: 1) Why do you eat? 2) How fortunate you are, 3) Difficulties in getting food to you.'
+            },
+            'Ten Paramis': {
+                info: 'Self-assessment of spiritual perfections: Generosity, Morality, Renunciation, Wisdom, Energy, Patience, Truthfulness, Determination, Lovingkindness, Equanimity.'
+            },
+            'Noble Eightfold Path': {
+                info: 'The path to liberation: Right Understanding, Intention, Speech, Action, Livelihood, Effort, Mindfulness, and Concentration.'
+            },
+            'Four Great Efforts': {
+                info: '1) Prevent unbeneficial qualities from arising, 2) Let go of those that arose, 3) Develop beneficial qualities, 4) Maintain those that arose.'
+            },
+            'Eight Worldly Dhammas': {
+                info: 'Reflect on attachment to four pairs: Praise/Blame, Fame/Obscurity, Gain/Loss, Pleasure/Pain. See how attachment creates suffering.'
+            },
+            'Origination and Dissolution': {
+                info: 'Contemplate objects and body: trace to source, break into four elements, observe impermanence. Nothing can ultimately be "yours".'
+            },
+            'Transformative Attitude': {
+                info: 'Four principles: 1) No problems only challenges, 2) Good luck bad luck who knows?, 3) What can I learn?, 4) Change everything into the path.'
+            },
+            'Alavaka\'s Questions': {
+                info: 'Buddha\'s answers: Confidence is best wealth, well-practiced Dhamma brings happiness, truth is sweetest, living with wisdom is noblest.'
+            },
+            'Four Assurances': {
+                info: 'From Kalama Sutta: Four benefits of a purified mind regarding afterlife, this life, karma, and purification regardless of beliefs.'
+            },
+            'Dedication of Merit': {
+                info: 'May what I have done to purify my mind be of help to benefit all beings. End each day or session with this dedication.'
+            },
+            'Dedication of Direction': {
+                info: 'Rededicate intention to develop the Paramis to be of the most possible benefit to myself and all beings.'
+            }
         }
     }
 };
@@ -1878,9 +1941,6 @@ class MeditationTimerApp {
         
         const ctx = canvas.getContext('2d');
         
-        // Calculate total sessions for center display
-        const totalSessions = Object.values(postureCounts).reduce((a, b) => a + b, 0);
-        
         new Chart(ctx, {
             type: 'doughnut',
             data: {
@@ -2663,7 +2723,10 @@ function createCategoryElement(key, category, onPracticeClick) {
     
     /** Generate practice buttons for this category */
     Object.entries(category.practices).forEach(([practiceName, subPractices]) => {
-        if (subPractices === null) {
+        /** Check if this is a simple practice (null or object with info) or hierarchical practice */
+        const isSimplePractice = subPractices === null || (subPractices && subPractices.info);
+        
+        if (isSimplePractice) {
             const practiceWrapper = document.createElement('div');
             practiceWrapper.className = 'practice-item-wrapper';
             
@@ -2763,7 +2826,10 @@ function createSubcategoryElement(name, subPractices, onPracticeClick) {
         });
     } else {
         Object.entries(subPractices).forEach(([subName, items]) => {
-            if (items === null) {
+            /** Check if this is a simple practice (null or object with info) */
+            const isSimplePractice = items === null || (items && items.info);
+            
+            if (isSimplePractice) {
                 const practiceWrapper = document.createElement('div');
                 practiceWrapper.className = 'practice-item-wrapper';
                 
