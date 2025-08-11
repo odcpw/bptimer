@@ -26,7 +26,9 @@ build/
 # Backup files
 *.backup
 *-backup.*
+backups/
 
 # Documentation files (kept private)
 CLAUDE.md
 meditationtopics.md
+practice-editor/
