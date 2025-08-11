@@ -2902,8 +2902,7 @@ function showPracticeInfo(practiceName) {
     let htmlContent = info.content;
     // Only convert to HTML if it doesn't already contain HTML tags
     if (!htmlContent.includes('<') && !htmlContent.includes('>')) {
-        htmlContent = htmlContent.replace(/
-/g, '<br>');
+        htmlContent = htmlContent.replace(/\n/g, '<br>');
     }
     
     /** Use innerHTML only for trusted content with HTML markup */
