@@ -167,12 +167,44 @@ function getCategoryForPractice(practiceName) {
 }
 
 /**
- * PRACTICE_DESCRIPTIONS - Detailed information for each practice
- * Maps practice names to objects containing title and HTML content
- * Content is displayed in info modals when users click the info button
+ * Helper function to get practice info from PRACTICE_CONFIG
+ * @param {string} practiceName - Name of the practice
+ * @returns {object|null} Practice info object or null if not found
+ */
+function getPracticeInfo(practiceName) {
+    // Search through all categories for the practice
+    for (const [categoryKey, category] of Object.entries(PRACTICE_CONFIG)) {
+        // Check direct practices
+        if (category.practices[practiceName] && category.practices[practiceName].info) {
+            return {
+                title: practiceName,
+                content: category.practices[practiceName].info
+            };
+        }
+        
+        // Check subcategory practices
+        for (const [parentPractice, practiceData] of Object.entries(category.practices)) {
+            if (practiceData && typeof practiceData === 'object' && !practiceData.info) {
+                // This is a practice with subcategories
+                for (const [subcategory, options] of Object.entries(practiceData)) {
+                    if (Array.isArray(options) && options.includes(practiceName)) {
+                        // Found in subcategory array - these don't have info texts
+                        return null;
+                    }
+                }
+            }
+        }
+    }
+    return null;
+}
+
+/**
+ * PRACTICE_DESCRIPTIONS - Detailed information for each practice (DEPRECATED)
+ * Now using info property directly from PRACTICE_CONFIG
+ * Keeping this temporarily for backward compatibility
  */
 const PRACTICE_DESCRIPTIONS = {
-    // Mindfulness practices
+    // Mindfulness practices (NOW IN PRACTICE_CONFIG)
     'Walking Meditation': {
         title: 'Walking Meditation Instructions',
         content: `For the formal walking meditation sessions it is often better to limit the length of the walking track to 20-30 paces.
@@ -2705,7 +2737,7 @@ function createCategoryElement(key, category, onPracticeClick) {
             practiceWrapper.appendChild(practiceBtn);
             
             /** Add info button for practices with descriptions */
-            if (PRACTICE_DESCRIPTIONS[practiceName]) {
+            if (getPracticeInfo(practiceName)) {
                 const infoBtn = document.createElement('button');
                 infoBtn.className = 'practice-info-btn';
                 infoBtn.textContent = 'ℹ️';
@@ -2777,7 +2809,7 @@ function createSubcategoryElement(name, subPractices, onPracticeClick) {
             practiceWrapper.appendChild(practiceBtn);
             
             /** Add info button for practices with descriptions */
-            if (PRACTICE_DESCRIPTIONS[practice]) {
+            if (getPracticeInfo(practice)) {
                 const infoBtn = document.createElement('button');
                 infoBtn.className = 'practice-info-btn';
                 infoBtn.textContent = 'ℹ️';
@@ -2808,7 +2840,7 @@ function createSubcategoryElement(name, subPractices, onPracticeClick) {
                 practiceWrapper.appendChild(practiceBtn);
                 
                 /** Add info button for practices with descriptions */
-                if (PRACTICE_DESCRIPTIONS[subName]) {
+                if (getPracticeInfo(subName)) {
                     const infoBtn = document.createElement('button');
                     infoBtn.className = 'practice-info-btn';
                     infoBtn.textContent = 'ℹ️';
@@ -2850,7 +2882,14 @@ function createSubcategoryElement(name, subPractices, onPracticeClick) {
  * @param {string} practiceName - Name of practice to show info for
  */
 function showPracticeInfo(practiceName) {
-    const info = PRACTICE_DESCRIPTIONS[practiceName];
+    // First try to get info from PRACTICE_CONFIG
+    let info = getPracticeInfo(practiceName);
+    
+    // Fall back to PRACTICE_DESCRIPTIONS for backward compatibility
+    if (!info) {
+        info = PRACTICE_DESCRIPTIONS[practiceName];
+    }
+    
     if (!info) return;
     
     const modal = document.getElementById('practiceInfoModal');
@@ -2858,8 +2897,17 @@ function showPracticeInfo(practiceName) {
     const contentEl = document.getElementById('practiceInfoContent');
     
     titleEl.textContent = info.title;
+    
+    // Convert plain text newlines to HTML for display
+    let htmlContent = info.content;
+    // Only convert to HTML if it doesn't already contain HTML tags
+    if (!htmlContent.includes('<') && !htmlContent.includes('>')) {
+        htmlContent = htmlContent.replace(/
+/g, '<br>');
+    }
+    
     /** Use innerHTML only for trusted content with HTML markup */
-    contentEl.innerHTML = info.content;
+    contentEl.innerHTML = htmlContent;
     
     modal.style.display = 'flex';
     
