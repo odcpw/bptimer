@@ -257,7 +257,75 @@ function shouldSendNotification(schedule, userTimezone, now) {
 }
 
 /**
- * Send push notification using Web Push Protocol
+ * Convert URL-safe base64 to Uint8Array
+ */
+function urlBase64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - base64String.length % 4) % 4);
+  const base64 = (base64String + padding)
+    .replace(/\-/g, '+')
+    .replace(/_/g, '/');
+  const rawData = atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+  for (let i = 0; i < rawData.length; ++i) {
+    outputArray[i] = rawData.charCodeAt(i);
+  }
+  return outputArray;
+}
+
+/**
+ * Create VAPID JWT token for push authentication
+ */
+async function createVapidJWT(audience, publicKey, privateKey) {
+  const header = {
+    typ: 'JWT',
+    alg: 'ES256'
+  };
+  
+  const payload = {
+    aud: audience,
+    exp: Math.floor(Date.now() / 1000) + 12 * 60 * 60, // 12 hours
+    sub: 'mailto:mail@odc.pw'
+  };
+  
+  const encodedHeader = btoa(JSON.stringify(header)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+  const encodedPayload = btoa(JSON.stringify(payload)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+  const unsignedToken = `${encodedHeader}.${encodedPayload}`;
+  
+  // Import private key for signing
+  const keyData = urlBase64ToUint8Array(privateKey);
+  const cryptoKey = await crypto.subtle.importKey(
+    'pkcs8',
+    keyData,
+    {
+      name: 'ECDSA',
+      namedCurve: 'P-256'
+    },
+    false,
+    ['sign']
+  );
+  
+  // Sign the token
+  const signature = await crypto.subtle.sign(
+    {
+      name: 'ECDSA',
+      hash: 'SHA-256'
+    },
+    cryptoKey,
+    new TextEncoder().encode(unsignedToken)
+  );
+  
+  // Convert signature to base64url
+  const signatureArray = new Uint8Array(signature);
+  const signatureBase64 = btoa(String.fromCharCode(...signatureArray))
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=/g, '');
+  
+  return `${unsignedToken}.${signatureBase64}`;
+}
+
+/**
+ * Send push notification using Web Push Protocol with VAPID authentication
  */
 async function sendPushNotification(subscription, activityName, env) {
   const payload = JSON.stringify({
@@ -273,21 +341,37 @@ async function sendPushNotification(subscription, activityName, env) {
   });
   
   try {
-    // Simple push - in production you'd want full VAPID signing
+    // Extract audience (origin) from push endpoint
+    const endpointUrl = new URL(subscription.endpoint);
+    const audience = `${endpointUrl.protocol}//${endpointUrl.host}`;
+    
+    // Create VAPID JWT token
+    const vapidJWT = await createVapidJWT(
+      audience,
+      env.VAPID_PUBLIC_KEY,
+      env.VAPID_PRIVATE_KEY
+    );
+    
+    // Prepare headers with VAPID authentication
+    const headers = {
+      'Content-Type': 'application/json',
+      'TTL': '86400', // 24 hours
+      'Authorization': `vapid t=${vapidJWT}, k=${env.VAPID_PUBLIC_KEY}`
+    };
+    
+    // Send push notification with VAPID authentication
     const response = await fetch(subscription.endpoint, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'TTL': '86400', // 24 hours
-      },
+      headers: headers,
       body: payload
     });
     
     if (!response.ok) {
-      throw new Error(`Push failed: ${response.status} ${response.statusText}`);
+      const responseText = await response.text();
+      throw new Error(`Push failed: ${response.status} ${response.statusText} - ${responseText}`);
     }
     
-    console.log('Push notification sent for:', activityName);
+    console.log('Push notification sent for:', activityName, 'to', audience);
     
   } catch (error) {
     console.error('Failed to send push notification:', error);

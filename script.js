@@ -3081,7 +3081,8 @@ class PushNotificationManager {
                 frequency: sma.frequency,
                 times: this.generateNotificationTimes(sma),
                 dayOfWeek: sma.dayOfWeek || 1, // Default Monday for weekly
-                timesPerDay: sma.timesPerDay
+                timesPerDay: sma.timesPerDay,
+                reminderWindows: sma.reminderWindows || ['morning', 'midday', 'afternoon', 'evening']
             }));
         
         try {
@@ -3109,6 +3110,14 @@ class PushNotificationManager {
     generateNotificationTimes(sma) {
         const times = [];
         
+        // Define time windows
+        const timeWindows = {
+            morning: { start: 7, end: 10 },    // 7-10am
+            midday: { start: 11, end: 14 },    // 11am-2pm  
+            afternoon: { start: 15, end: 18 }, // 3-6pm
+            evening: { start: 19, end: 21 }    // 7-9pm
+        };
+        
         switch (sma.frequency) {
             case 'monthly':
                 times.push('09:00'); // 9 AM on first of month
@@ -3120,11 +3129,25 @@ class PushNotificationManager {
                 times.push('09:00'); // 9 AM daily
                 break;
             case 'multiple':
-                // Generate spread-out times throughout the day
-                const baseHours = [8, 12, 16, 20]; // 8am, 12pm, 4pm, 8pm
-                for (let i = 0; i < Math.min(sma.timesPerDay || 3, 4); i++) {
-                    const hour = baseHours[i];
+                // Get selected reminder windows, default to all windows if none selected
+                const selectedWindows = sma.reminderWindows && sma.reminderWindows.length > 0 
+                    ? sma.reminderWindows 
+                    : ['morning', 'midday', 'afternoon', 'evening'];
+                
+                const timesPerDay = sma.timesPerDay || 3;
+                
+                // Distribute notifications across selected windows
+                for (let i = 0; i < timesPerDay; i++) {
+                    // Cycle through selected windows
+                    const windowKey = selectedWindows[i % selectedWindows.length];
+                    const window = timeWindows[windowKey];
+                    
+                    // Generate random time within the window
+                    const hourRange = window.end - window.start;
+                    const randomHourOffset = Math.floor(Math.random() * hourRange);
+                    const hour = window.start + randomHourOffset;
                     const minute = Math.floor(Math.random() * 60);
+                    
                     times.push(`${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`);
                 }
                 break;
