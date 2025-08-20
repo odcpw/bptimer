@@ -808,7 +808,7 @@ class MeditationTimerApp {
         }
         
         try {
-            const registration = await navigator.serviceWorker.register('/service-worker.js');
+            const registration = await navigator.serviceWorker.register('./service-worker.js');
             console.log('ServiceWorker registered:', registration.scope);
             
             /** Check for service worker updates every hour */

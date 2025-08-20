@@ -36,6 +36,10 @@ export default {
         return new Response('OK', { headers: corsHeaders });
       }
       
+      if (url.pathname === '/debug' && request.method === 'GET') {
+        return await handleDebug(request, env, corsHeaders);
+      }
+      
       return new Response('Not found', { 
         status: 404, 
         headers: corsHeaders 
@@ -150,6 +154,56 @@ async function handleScheduleUpdate(request, env, corsHeaders) {
     status: 200, 
     headers: corsHeaders 
   });
+}
+
+/**
+ * Handle debug requests - shows stored data
+ */
+async function handleDebug(request, env, corsHeaders) {
+  try {
+    const now = new Date();
+    const schedulesList = await env.SMA_SCHEDULES.list();
+    const subscriptionsList = await env.SMA_SUBSCRIPTIONS.list();
+    
+    const debug = {
+      currentTime: now.toISOString(),
+      currentUTCMinute: now.getUTCMinutes(),
+      isQuarterHour: now.getUTCMinutes() % 15 === 0,
+      schedules: [],
+      subscriptions: subscriptionsList.keys.length
+    };
+    
+    // Get all schedule data
+    for (const { name: key } of schedulesList.keys) {
+      try {
+        const scheduleData = JSON.parse(await env.SMA_SCHEDULES.get(key));
+        debug.schedules.push({
+          key,
+          userId: scheduleData.userId,
+          scheduleCount: scheduleData.schedules?.length || 0,
+          schedules: scheduleData.schedules?.map(s => ({
+            name: s.name,
+            frequency: s.frequency,
+            timesPerDay: s.timesPerDay,
+            reminderWindows: s.reminderWindows,
+            times: s.times,
+            lastSent: s.lastSent
+          }))
+        });
+      } catch (e) {
+        debug.schedules.push({ key, error: e.message });
+      }
+    }
+    
+    return new Response(JSON.stringify(debug, null, 2), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+  } catch (error) {
+    return new Response(`Debug error: ${error.message}`, {
+      status: 500,
+      headers: corsHeaders
+    });
+  }
 }
 
 /**
