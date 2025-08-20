@@ -637,7 +637,8 @@ class MeditationTimerApp {
             'saveSessionBtn', 'saveTimeOnlyBtn', 'cancelSessionBtn', 'modalCloseBtn', 'togglePlannerBtn', 
             'sessionPlannerContent', 'toastContainer', 'smaList', 'addSmaBtn', 'smaModal', 'smaModalCloseBtn',
             'smaName', 'smaFrequency', 'smaTimesPerDay', 'smaNotifications', 'saveSmaBtn', 'cancelSmaBtn',
-            'timesPerDayGroup'
+            'timesPerDayGroup', 'reminderWindowsGroup', 'smaWindowMorning', 'smaWindowMidday', 
+            'smaWindowAfternoon', 'smaWindowEvening'
         ];
         
         elementIds.forEach(id => {
@@ -3307,11 +3308,24 @@ class SMAManager {
             this.elements.smaFrequency.value = sma.frequency;
             this.elements.smaTimesPerDay.value = sma.timesPerDay || 3;
             this.elements.smaNotifications.checked = sma.notificationsEnabled;
+            
+            // Set reminder windows
+            const windows = sma.reminderWindows || ['morning'];
+            this.elements.smaWindowMorning.checked = windows.includes('morning');
+            this.elements.smaWindowMidday.checked = windows.includes('midday');
+            this.elements.smaWindowAfternoon.checked = windows.includes('afternoon');
+            this.elements.smaWindowEvening.checked = windows.includes('evening');
         } else {
             this.elements.smaName.value = '';
             this.elements.smaFrequency.value = 'daily';
             this.elements.smaTimesPerDay.value = '3';
             this.elements.smaNotifications.checked = true;
+            
+            // Default to morning only
+            this.elements.smaWindowMorning.checked = true;
+            this.elements.smaWindowMidday.checked = false;
+            this.elements.smaWindowAfternoon.checked = false;
+            this.elements.smaWindowEvening.checked = false;
         }
         
         this.updateFrequencyOptions();
@@ -3333,6 +3347,9 @@ class SMAManager {
     updateFrequencyOptions() {
         const frequency = this.elements.smaFrequency.value;
         this.elements.timesPerDayGroup.style.display = frequency === 'multiple' ? 'block' : 'none';
+        // Show reminder windows for daily and multiple frequencies
+        this.elements.reminderWindowsGroup.style.display = 
+            (frequency === 'daily' || frequency === 'multiple') ? 'block' : 'none';
     }
     
     /**
@@ -3343,6 +3360,15 @@ class SMAManager {
         const frequency = this.elements.smaFrequency.value;
         const timesPerDay = parseInt(this.elements.smaTimesPerDay.value);
         const notificationsEnabled = this.elements.smaNotifications.checked;
+        
+        // Capture selected reminder windows
+        const reminderWindows = [];
+        if (frequency === 'daily' || frequency === 'multiple') {
+            if (this.elements.smaWindowMorning.checked) reminderWindows.push('morning');
+            if (this.elements.smaWindowMidday.checked) reminderWindows.push('midday');
+            if (this.elements.smaWindowAfternoon.checked) reminderWindows.push('afternoon');
+            if (this.elements.smaWindowEvening.checked) reminderWindows.push('evening');
+        }
         
         // Validation
         if (!name) {
@@ -3355,21 +3381,18 @@ class SMAManager {
             return;
         }
         
-        // If notifications are being enabled for the first time, request permission
-        if (notificationsEnabled && !this.hasNotificationPermission()) {
-            const permissionGranted = await this.pushManager.requestPermissionAndSubscribe();
-            if (!permissionGranted) {
-                // User denied permission - save SMA without notifications
-                this.elements.smaNotifications.checked = false;
-                this.showToast('SMA saved without notifications (permission denied)', 'info');
-                return; // Let user try again if they want
-            }
+        // TODO: Implement push notification subscription
+        // For now, just save the SMA with notification preference
+        if (notificationsEnabled) {
+            console.log('Notifications requested for SMA:', name);
+            // Future: Request permission and register with Cloudflare worker
         }
         
         const smaData = {
             name,
             frequency,
             timesPerDay: frequency === 'multiple' ? timesPerDay : undefined,
+            reminderWindows,
             notificationsEnabled,
             updatedAt: new Date().toISOString()
         };
