@@ -3042,13 +3042,26 @@ class PushNotificationManager {
             // Register service worker if not already registered
             const registration = await navigator.serviceWorker.ready;
             
-            // Subscribe to push notifications
-            const subscription = await registration.pushManager.subscribe({
-                userVisibleOnly: true,
-                applicationServerKey: this.urlBase64ToUint8Array(this.vapidPublicKey)
-            });
+            // Check for existing subscription first
+            let subscription = await registration.pushManager.getSubscription();
+            console.log('Existing subscription:', !!subscription);
+            
+            if (!subscription) {
+                // Create new subscription
+                console.log('Creating new push subscription...');
+                subscription = await registration.pushManager.subscribe({
+                    userVisibleOnly: true,
+                    applicationServerKey: this.urlBase64ToUint8Array(this.vapidPublicKey)
+                });
+                console.log('New subscription created');
+            } else {
+                console.log('Using existing subscription');
+            }
             
             // Send subscription to worker
+            console.log('Sending subscription to worker:', this.workerUrl + '/subscribe');
+            console.log('Subscription data:', { subscription, userId: this.userId });
+            
             const response = await fetch(`${this.workerUrl}/subscribe`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -3058,6 +3071,8 @@ class PushNotificationManager {
                     timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
                 })
             });
+            
+            console.log('Worker response:', response.status, response.statusText);
             
             if (!response.ok) {
                 throw new Error(`Subscription failed: ${response.status}`);
