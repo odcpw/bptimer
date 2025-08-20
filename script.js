@@ -3092,7 +3092,7 @@ class PushNotificationManager {
         const schedules = smas
             .filter(sma => sma.notificationsEnabled)
             .map(sma => ({
-                name: sma.name,
+                smaId: sma.id,
                 frequency: sma.frequency,
                 times: this.generateNotificationTimes(sma),
                 dayOfWeek: sma.dayOfWeek || 1, // Default Monday for weekly

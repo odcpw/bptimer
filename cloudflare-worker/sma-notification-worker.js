@@ -237,11 +237,7 @@ async function sendScheduledNotifications(env) {
       for (const schedule of scheduleData.schedules) {
         if (shouldSendNotification(schedule, subscriptionData.timezone || 'UTC', now)) {
           try {
-            await sendPushNotification(
-              subscriptionData.subscription, 
-              schedule.name,
-              env
-            );
+            await sendPushNotification(subscriptionData.subscription, schedule.smaId, env);
             notificationCount++;
             
             // Update last sent time
@@ -463,15 +459,8 @@ async function createVapidJWT(audience, publicKey, privateKey) {
 /**
  * Send push notification using Web Push Protocol with VAPID authentication
  */
-async function sendPushNotification(subscription, activityName, env) {
-  const payload = JSON.stringify({
-    title: "Mindfulness Reminder",
-    body: activityName,
-    icon: "/icon-192.png",
-    badge: "/icon-192.png",
-    tag: "sma-reminder",
-    data: { type: 'sma', timestamp: Date.now() }
-  });
+async function sendPushNotification(subscription, smaId, env) {
+  const payload = JSON.stringify({ due: [smaId], ts: Date.now() });
   
   try {
     // Extract audience (origin) from push endpoint
@@ -486,9 +475,7 @@ async function sendPushNotification(subscription, activityName, env) {
     );
     
     // Encrypt payload per Web Push (aes128gcm)
-    const { body: encBody, headers: encHeaders } = await encryptWebPushPayload(
-      subscription, payload
-    );
+    const { body: encBody, headers: encHeaders } = await encryptWebPushPayload(subscription, payload);
 
     // Prepare headers with VAPID authentication and encryption
     const headers = {
@@ -512,7 +499,7 @@ async function sendPushNotification(subscription, activityName, env) {
       throw new Error(`Push failed: ${response.status} ${response.statusText} - ${responseText}`);
     }
     
-    console.log('Push notification sent for:', activityName, 'to', audience);
+    console.log('Push notification sent to', audience);
     
   } catch (error) {
     console.error('Failed to send push notification:', error);

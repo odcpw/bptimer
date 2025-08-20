@@ -1,7 +1,7 @@
 // Service Worker for Meditation Timer PWA
 // Comprehensive offline support with intelligent caching
 
-const CACHE_VERSION = 6;
+const CACHE_VERSION = 7;
 const CACHE_NAME = `meditation-timer-v${CACHE_VERSION}`;
 const STATIC_CACHE = `static-${CACHE_NAME}`;
 const RUNTIME_CACHE = `runtime-${CACHE_NAME}`;
@@ -148,42 +148,96 @@ self.addEventListener('fetch', event => {
 
 // Push event - handle incoming push notifications
 self.addEventListener('push', event => {
-    let notificationData = {
-        title: 'Mindfulness Reminder',
-        body: 'Time for your practice',
-        icon: '/icon-192.png',
-        badge: '/icon-192.png',
-        tag: 'sma-reminder',
-        data: {}
-    };
-    
-    if (event.data) {
-        try {
-            const payload = event.data.json();
-            notificationData = { ...notificationData, ...payload };
-        } catch (error) {
-            console.error('Failed to parse push payload:', error);
-        }
-    }
-    
-    event.waitUntil(
-        self.registration.showNotification(notificationData.title, {
-            body: notificationData.body,
-            icon: notificationData.icon,
-            badge: notificationData.badge,
-            tag: notificationData.tag,
-            data: notificationData.data,
-            requireInteraction: false,
-            actions: [
-                {
-                    action: 'open',
-                    title: 'Open App',
-                    icon: '/icon-192.png'
+    event.waitUntil((async () => {
+        const defaultOptions = {
+            title: 'Mindfulness Reminder',
+            body: 'Time for your practice',
+            icon: '/icon-192.png',
+            badge: '/icon-192.png',
+            tag: 'sma-reminder',
+            data: { type: 'sma' }
+        };
+
+        let dueIds = [];
+        if (event.data) {
+            try {
+                const payload = event.data.json();
+                if (Array.isArray(payload?.due)) {
+                    dueIds = payload.due;
+                } else if (payload?.smaId) {
+                    dueIds = [payload.smaId];
                 }
-            ]
-        })
-    );
+            } catch (e) {
+                console.warn('Push payload parse error:', e);
+            }
+        }
+
+        // If no IDs provided, show generic
+        if (dueIds.length === 0) {
+            return self.registration.showNotification(defaultOptions.title, defaultOptions);
+        }
+
+        // Try to look up names in IndexedDB
+        let names = [];
+        try {
+            const db = await openSmaDB();
+            if (db) {
+                names = await Promise.all(dueIds.map(id => getSmaNameById(db, id)));
+                names = names.filter(Boolean);
+            }
+        } catch (err) {
+            console.warn('IndexedDB lookup failed:', err);
+        }
+
+        // If we have names, show one per ID (limit to 3 to avoid spam)
+        if (names.length > 0) {
+            const toShow = names.slice(0, 3);
+            for (const name of toShow) {
+                await self.registration.showNotification(defaultOptions.title, {
+                    ...defaultOptions,
+                    body: name
+                });
+            }
+            // If more pending beyond 3, indicate there are more
+            if (names.length > 3) {
+                await self.registration.showNotification(defaultOptions.title, {
+                    ...defaultOptions,
+                    body: `${names.length - 3} more reminders`
+                });
+            }
+            return;
+        }
+
+        // Fallback to generic if no names found
+        return self.registration.showNotification(defaultOptions.title, defaultOptions);
+    })());
 });
+
+// IndexedDB helpers for SW lookup
+function openSmaDB() {
+    return new Promise((resolve, reject) => {
+        const request = indexedDB.open('MeditationTimerDB', 3);
+        request.onerror = () => resolve(null);
+        request.onsuccess = () => resolve(request.result);
+        request.onupgradeneeded = () => {
+            // Do not create schema here; SW relies on app to create 'smas'
+        };
+    });
+}
+
+function getSmaNameById(db, id) {
+    return new Promise((resolve, reject) => {
+        try {
+            const tx = db.transaction(['smas'], 'readonly');
+            const store = tx.objectStore('smas');
+            const req = store.get(id);
+            req.onsuccess = () => resolve(req.result?.name || null);
+            req.onerror = () => resolve(null);
+        } catch (e) {
+            resolve(null);
+        }
+    });
+}
 
 // Notification click event - handle user interaction with notifications
 self.addEventListener('notificationclick', event => {
