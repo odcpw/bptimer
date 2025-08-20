@@ -3244,25 +3244,33 @@ class SMAManager {
     async loadSMAs() {
         if (!this.db) {
             console.warn('Database not available, SMAs will not persist');
+            this.smas = [];
             return;
         }
         
-        try {
-            const transaction = this.db.transaction(['smas'], 'readonly');
-            const store = transaction.objectStore('smas');
-            const request = store.getAll();
-            
-            request.onsuccess = () => {
-                this.smas = request.result || [];
-                this.renderSMAList();
-            };
-            
-            request.onerror = () => {
-                console.error('Failed to load SMAs:', request.error);
-            };
-        } catch (error) {
-            console.error('Error loading SMAs:', error);
-        }
+        return new Promise((resolve, reject) => {
+            try {
+                const transaction = this.db.transaction(['smas'], 'readonly');
+                const store = transaction.objectStore('smas');
+                const request = store.getAll();
+                
+                request.onsuccess = () => {
+                    this.smas = request.result || [];
+                    this.renderSMAList();
+                    resolve(); // Resolve AFTER data is loaded and rendered
+                };
+                
+                request.onerror = () => {
+                    console.error('Failed to load SMAs:', request.error);
+                    this.smas = [];
+                    reject(request.error);
+                };
+            } catch (error) {
+                console.error('Error loading SMAs:', error);
+                this.smas = [];
+                reject(error);
+            }
+        });
     }
     
     /**
