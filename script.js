@@ -3420,18 +3420,18 @@ class SMAManager {
             return;
         }
         
-        // Push notification subscription will be handled after SMA list is updated
-        
+        // Ensure notificationsEnabled is explicitly boolean
         const smaData = {
             name,
             frequency,
             timesPerDay: frequency === 'multiple' ? timesPerDay : undefined,
             reminderWindows,
-            notificationsEnabled,
+            notificationsEnabled: Boolean(notificationsEnabled), // Explicit boolean conversion
             updatedAt: new Date().toISOString()
         };
         
-        console.log('Saving smaData to DB:', smaData);
+        console.log('Creating smaData - checkbox:', notificationsEnabled, 'boolean:', Boolean(notificationsEnabled));
+        console.log('Final smaData:', smaData);
         
         if (this.currentEditingSMA) {
             // Update existing SMA
@@ -3448,33 +3448,44 @@ class SMAManager {
         this.hideSMAModal();
         await this.loadSMAs();
         
-        // Handle push notification subscription based on updated SMA state
-        // Use the fresh SMA list after loadSMAs() to get accurate notification state
+        // Manage subscription state based on all SMAs
+        await this.manageSubscriptionState();
+        
+        this.showToast(`SMA ${this.currentEditingSMA ? 'updated' : 'added'} successfully`, 'success');
+    }
+    
+    /**
+     * Centralized subscription state management
+     * Handles subscribe/unsubscribe based on current SMAs
+     */
+    async manageSubscriptionState() {
         const smasWithNotifications = this.smas.filter(sma => sma.notificationsEnabled);
-        console.log('SMAs after save:', this.smas.length, 'with notifications:', smasWithNotifications.length);
-        console.log('SMA notification states:', this.smas.map(sma => ({ name: sma.name, notificationsEnabled: sma.notificationsEnabled })));
+        console.log(`Managing subscription: ${smasWithNotifications.length} SMAs with notifications out of ${this.smas.length} total`);
+        console.log('SMAs with notification status:', this.smas.map(sma => ({ 
+            name: sma.name, 
+            notificationsEnabled: sma.notificationsEnabled,
+            type: typeof sma.notificationsEnabled
+        })));
         
         if (smasWithNotifications.length > 0) {
-            // Subscribe if we have SMAs with notifications and not already subscribed
-            console.log('SMAs with notifications found, ensuring subscription...');
+            console.log('Need subscription - ensuring it exists...');
             try {
                 const success = await this.pushManager.requestPermissionAndSubscribe();
                 if (success) {
-                    // Update schedules after successful subscription
                     await this.pushManager.updateSchedules(this.smas);
+                    console.log('✅ Subscription and schedules updated successfully');
                 } else {
-                    this.showToast('SMA saved, but notifications setup failed', 'error');
+                    console.error('❌ Subscription failed');
+                    this.showToast('Failed to enable notifications', 'error');
                 }
             } catch (error) {
-                console.error('Subscription failed:', error);
-                this.showToast('SMA saved, but notifications setup failed', 'error');
+                console.error('❌ Subscription management failed:', error);
+                this.showToast('Failed to enable notifications', 'error');
             }
         } else {
-            // No SMAs with notifications - could unsubscribe here if needed
-            console.log('No SMAs with notifications - skipping subscription');
+            console.log('No SMAs require notifications - clearing schedules');
+            await this.pushManager.updateSchedules([]);
         }
-        
-        this.showToast(`SMA ${this.currentEditingSMA ? 'updated' : 'added'} successfully`, 'success');
     }
     
     /**
@@ -3547,19 +3558,7 @@ class SMAManager {
             }
             
             await this.loadSMAs();
-            
-            // Handle push notification subscription after deletion
-            const smasWithNotifications = this.smas.filter(sma => sma.notificationsEnabled);
-            
-            if (smasWithNotifications.length > 0) {
-                // Still have SMAs with notifications - update schedules
-                console.log('Updating notification schedules after deletion...');
-                await this.pushManager.updateSchedules(this.smas);
-            } else {
-                // No more SMAs with notifications - could unsubscribe here
-                console.log('No SMAs with notifications remaining after deletion');
-            }
-            
+            await this.manageSubscriptionState();
             this.showToast('SMA deleted successfully', 'success');
         }
     }
