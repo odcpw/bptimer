@@ -3506,7 +3506,12 @@ class SMAManager {
             const store = transaction.objectStore('smas');
             const request = store.add(smaData);
             
-            request.onsuccess = () => resolve();
+            // Wait for transaction completion, not just request success
+            transaction.oncomplete = () => {
+                console.log('✅ SMA added to database successfully');
+                resolve();
+            };
+            transaction.onerror = () => reject(transaction.error);
             request.onerror = () => reject(request.error);
         });
     }
@@ -3522,7 +3527,12 @@ class SMAManager {
             const store = transaction.objectStore('smas');
             const request = store.put(smaData);
             
-            request.onsuccess = () => resolve();
+            // Wait for transaction completion, not just request success
+            transaction.oncomplete = () => {
+                console.log('✅ SMA updated in database successfully');
+                resolve();
+            };
+            transaction.onerror = () => reject(transaction.error);
             request.onerror = () => reject(request.error);
         });
     }
