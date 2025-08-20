@@ -3238,7 +3238,7 @@ class SMAManager {
             emptyMessage.className = 'empty-sma-message';
             emptyMessage.innerHTML = `
                 <p>No Special Mindfulness Activities yet.</p>
-                <p>Add activities like "Opening doors mindfully" or "Conscious breathing at red lights" to build awareness throughout your day.</p>
+                <p>Add activities like "Opening doors mindfully" or "Awareness of using water taps" to build awareness throughout your day.</p>
             `;
             listContainer.appendChild(emptyMessage);
             return;

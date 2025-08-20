@@ -434,14 +434,18 @@ button:focus:not(:focus-visible) {
         padding: 0 8px;
     }
     
-    /* Reduce tab padding for mobile screens */
-    .nav-tab {
-        padding: 12px 16px;
-        font-size: 0.9rem;
+    /* Make tabs fill full width on mobile screens */
+    .nav-tabs {
+        gap: 4px;
+        width: 100%;
     }
     
-    .nav-tabs {
-        gap: 8px;
+    .nav-tab {
+        flex: 1;
+        padding: 12px 8px;
+        font-size: 0.85rem;
+        text-align: center;
+        min-width: 0; /* Allow text to shrink */
     }
 }
 
