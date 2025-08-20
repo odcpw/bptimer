@@ -154,10 +154,10 @@ async function handleScheduleUpdate(request, env, corsHeaders) {
 
 /**
  * Send scheduled notifications (runs every 15 minutes)
+ * Uses user's local timezone and respects 7am-9pm daily window
  */
 async function sendScheduledNotifications(env) {
   const now = new Date();
-  const currentHour = now.getUTCHours();
   const currentMinute = now.getUTCMinutes();
   
   // Only check on quarter hours to reduce load
@@ -179,9 +179,9 @@ async function sendScheduledNotifications(env) {
         continue;
       }
       
-      // Check if any SMAs should trigger now
+      // Check if any SMAs should trigger now (using user's local timezone)
       for (const schedule of scheduleData.schedules) {
-        if (shouldSendNotification(schedule, currentHour, currentMinute, now)) {
+        if (shouldSendNotification(schedule, subscriptionData.timezone || 'UTC', now)) {
           try {
             await sendPushNotification(
               subscriptionData.subscription, 
@@ -209,8 +209,9 @@ async function sendScheduledNotifications(env) {
 
 /**
  * Check if notification should be sent
+ * Respects 7am-9pm local time window for daily notifications
  */
-function shouldSendNotification(schedule, currentHour, currentMinute, now) {
+function shouldSendNotification(schedule, userTimezone, now) {
   const { frequency, times = [], lastSent } = schedule;
   
   // Don't send if already sent in last hour
@@ -220,13 +221,23 @@ function shouldSendNotification(schedule, currentHour, currentMinute, now) {
     if (timeDiff < 60 * 60 * 1000) return false; // 1 hour
   }
   
+  // Convert current UTC time to user's local time
+  const localTime = new Date(now.toLocaleString("en-US", { timeZone: userTimezone }));
+  const localHour = localTime.getHours();
+  const localMinute = localTime.getMinutes();
+  
+  // Enforce 7am-9pm window for daily/multiple notifications
+  if ((frequency === 'daily' || frequency === 'multiple') && (localHour < 7 || localHour >= 21)) {
+    return false;
+  }
+  
   // Check if current time matches any scheduled times
-  const currentTime = `${currentHour.toString().padStart(2, '0')}:${currentMinute.toString().padStart(2, '0')}`;
+  const currentTime = `${localHour.toString().padStart(2, '0')}:${localMinute.toString().padStart(2, '0')}`;
   
   // For quarter-hour checks, match if within 15 minutes of scheduled time
   const isTimeMatch = times.some(scheduledTime => {
     const [schedHour, schedMinute] = scheduledTime.split(':').map(Number);
-    return schedHour === currentHour && Math.abs(schedMinute - currentMinute) < 15;
+    return schedHour === localHour && Math.abs(schedMinute - localMinute) < 15;
   });
   
   if (!isTimeMatch) return false;
@@ -235,11 +246,11 @@ function shouldSendNotification(schedule, currentHour, currentMinute, now) {
   switch (frequency) {
     case 'daily':
     case 'multiple':
-      return true; // Already checked time match above
+      return true; // Already checked time match and window above
     case 'weekly':
-      return now.getUTCDay() === (schedule.dayOfWeek || 1); // Default Monday
+      return localTime.getDay() === (schedule.dayOfWeek || 1); // Default Monday, using local day
     case 'monthly':
-      return now.getUTCDate() === 1; // First of month
+      return localTime.getDate() === 1; // First of month, using local date
     default:
       return false;
   }

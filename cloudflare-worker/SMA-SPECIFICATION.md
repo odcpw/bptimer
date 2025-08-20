@@ -56,9 +56,10 @@ A dedicated module for tracking mindfulness activities throughout daily life (e.
 │ ○ Multiple times per day            │
 │   └─ Times: [3 ▼]                  │
 │                                     │
-│ Reminder Hours (if daily/multiple): │
-│ [✓] Morning (8-10am)                │
-│ [✓] Afternoon (2-4pm)               │
+│ Reminder Windows (if daily/multiple):│
+│ [✓] Morning (7-10am)                │
+│ [✓] Midday (11am-2pm)               │
+│ [✓] Afternoon (3-6pm)               │
 │ [✓] Evening (7-9pm)                 │
 │                                     │
 │ [Save] [Cancel]                     │
@@ -81,10 +82,10 @@ A dedicated module for tracking mindfulness activities throughout daily life (e.
     
     // For multiple times daily
     timesPerDay: 3,
-    reminderWindows: ['morning', 'afternoon', 'evening'],
+    reminderWindows: ['morning', 'midday', 'afternoon'],
     
-    // Actual reminder times (randomized within windows)
-    scheduledTimes: ['09:15', '14:30', '20:45']
+    // Actual reminder times (randomized within chosen windows)
+    scheduledTimes: ['09:15', '12:30', '16:45']
   },
   status: 'active', // 'active' | 'paused'
   createdAt: '2024-01-15T10:00:00Z',
@@ -111,7 +112,7 @@ A dedicated module for tracking mindfulness activities throughout daily life (e.
   schedules: [
     {
       id: 'sma_1234567890', // Links to local activity
-      times: ['09:15', '14:30', '20:45'],
+      times: ['09:15', '14:30', '18:45'], // All within 7am-9pm local window
       timezone: 'America/New_York',
       nextReminder: '2024-01-15T14:30:00Z'
     }
@@ -123,19 +124,36 @@ A dedicated module for tracking mindfulness activities throughout daily life (e.
 
 ### Scheduling Logic
 ```javascript
-// Time window randomization (prevents habit predictability)
+// Time windows within 7am-9pm daily constraint
 const TIME_WINDOWS = {
-  morning: { start: 8, end: 10 },
-  afternoon: { start: 14, end: 16 },
-  evening: { start: 19, end: 21 }
+  morning: { start: 7, end: 10 },    // 7-10am
+  midday: { start: 11, end: 14 },    // 11am-2pm  
+  afternoon: { start: 15, end: 18 }, // 3-6pm
+  evening: { start: 19, end: 21 }    // 7-9pm
 };
 
 function scheduleActivity(activity) {
   const times = [];
+  const { frequency, reminderWindows = [], timesPerDay = 1 } = activity;
   
-  for (const window of activity.reminderWindows) {
-    const { start, end } = TIME_WINDOWS[window];
-    const hour = start + Math.random() * (end - start);
+  if (frequency === 'multiple' && reminderWindows.length > 0) {
+    // User chose specific windows - distribute across selected windows
+    const windowsPerReminder = Math.max(1, Math.floor(reminderWindows.length / timesPerDay));
+    
+    for (let i = 0; i < timesPerDay && i < reminderWindows.length; i++) {
+      const windowName = reminderWindows[i];
+      const window = TIME_WINDOWS[windowName];
+      if (window) {
+        const hour = window.start + Math.random() * (window.end - window.start);
+        const minute = Math.floor(Math.random() * 60);
+        times.push(`${Math.floor(hour).toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`);
+      }
+    }
+  } else if (frequency === 'daily') {
+    // Single daily reminder - use first selected window or default to morning
+    const windowName = reminderWindows[0] || 'morning';
+    const window = TIME_WINDOWS[windowName];
+    const hour = window.start + Math.random() * (window.end - window.start);
     const minute = Math.floor(Math.random() * 60);
     times.push(`${Math.floor(hour).toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`);
   }
