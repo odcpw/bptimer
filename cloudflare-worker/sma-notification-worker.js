@@ -280,8 +280,8 @@ function shouldSendNotification(schedule, userTimezone, now) {
   const localHour = localTime.getHours();
   const localMinute = localTime.getMinutes();
   
-  // Enforce 7am-9pm window for daily/multiple notifications
-  if ((frequency === 'daily' || frequency === 'multiple') && (localHour < 7 || localHour >= 21)) {
+  // Enforce 6am-10pm window for daily/multiple notifications (16-hour wake time)
+  if ((frequency === 'daily' || frequency === 'multiple') && (localHour < 6 || localHour >= 22)) {
     return false;
   }
   

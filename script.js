@@ -3125,12 +3125,12 @@ class PushNotificationManager {
     generateNotificationTimes(sma) {
         const times = [];
         
-        // Define time windows
+        // Define time windows - continuous 4-hour blocks (6am-10pm = 16 hours)
         const timeWindows = {
-            morning: { start: 7, end: 10 },    // 7-10am
-            midday: { start: 11, end: 14 },    // 11am-2pm  
-            afternoon: { start: 15, end: 18 }, // 3-6pm
-            evening: { start: 19, end: 21 }    // 7-9pm
+            morning: { start: 6, end: 10 },    // 6-10am
+            midday: { start: 10, end: 14 },    // 10am-2pm  
+            afternoon: { start: 14, end: 18 }, // 2-6pm
+            evening: { start: 18, end: 22 }    // 6-10pm
         };
         
         switch (sma.frequency) {
