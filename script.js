@@ -3398,6 +3398,7 @@ class SMAManager {
         const frequency = this.elements.smaFrequency.value;
         const timesPerDay = parseInt(this.elements.smaTimesPerDay.value);
         const notificationsEnabled = this.elements.smaNotifications.checked;
+        console.log('Checkbox value - notificationsEnabled:', notificationsEnabled);
         
         // Capture selected reminder windows
         const reminderWindows = [];
@@ -3429,6 +3430,8 @@ class SMAManager {
             notificationsEnabled,
             updatedAt: new Date().toISOString()
         };
+        
+        console.log('Saving smaData to DB:', smaData);
         
         if (this.currentEditingSMA) {
             // Update existing SMA
