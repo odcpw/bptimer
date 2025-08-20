@@ -3404,21 +3404,7 @@ class SMAManager {
             return;
         }
         
-        // Handle push notification subscription
-        if (notificationsEnabled) {
-            console.log('Attempting to subscribe to push notifications...');
-            try {
-                const success = await this.pushManager.requestPermissionAndSubscribe();
-                console.log('Subscription result:', success);
-                if (!success) {
-                    // User can still save SMA without notifications
-                    this.showToast('SMA saved, but notifications setup failed', 'error');
-                }
-            } catch (error) {
-                console.error('Subscription failed with error:', error);
-                this.showToast('SMA saved, but notifications setup failed', 'error');
-            }
-        }
+        // Push notification subscription will be handled after SMA list is updated
         
         const smaData = {
             name,
@@ -3444,10 +3430,27 @@ class SMAManager {
         this.hideSMAModal();
         await this.loadSMAs();
         
-        // Update push notification schedules if any SMAs have notifications enabled
+        // Handle push notification subscription based on current SMA state
         const smasWithNotifications = this.smas.filter(sma => sma.notificationsEnabled);
+        
         if (smasWithNotifications.length > 0) {
-            await this.pushManager.updateSchedules(this.smas);
+            // Subscribe if we have SMAs with notifications and not already subscribed
+            console.log('SMAs with notifications found, ensuring subscription...');
+            try {
+                const success = await this.pushManager.requestPermissionAndSubscribe();
+                if (success) {
+                    // Update schedules after successful subscription
+                    await this.pushManager.updateSchedules(this.smas);
+                } else {
+                    this.showToast('SMA saved, but notifications setup failed', 'error');
+                }
+            } catch (error) {
+                console.error('Subscription failed:', error);
+                this.showToast('SMA saved, but notifications setup failed', 'error');
+            }
+        } else {
+            // No SMAs with notifications - could unsubscribe here if needed
+            console.log('No SMAs with notifications - skipping subscription');
         }
         
         this.showToast(`SMA ${this.currentEditingSMA ? 'updated' : 'added'} successfully`, 'success');
@@ -3523,6 +3526,19 @@ class SMAManager {
             }
             
             await this.loadSMAs();
+            
+            // Handle push notification subscription after deletion
+            const smasWithNotifications = this.smas.filter(sma => sma.notificationsEnabled);
+            
+            if (smasWithNotifications.length > 0) {
+                // Still have SMAs with notifications - update schedules
+                console.log('Updating notification schedules after deletion...');
+                await this.pushManager.updateSchedules(this.smas);
+            } else {
+                // No more SMAs with notifications - could unsubscribe here
+                console.log('No SMAs with notifications remaining after deletion');
+            }
+            
             this.showToast('SMA deleted successfully', 'success');
         }
     }
