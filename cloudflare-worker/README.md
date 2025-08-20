@@ -21,6 +21,8 @@ This Cloudflare Worker handles push notifications for Special Mindfulness Activi
 3. **VAPID Keys** (for push notification security)
    - Public Key: `BPYlMr-dC9cqX8W-tMBShBbus2vWmOdb6cRNVsJ5i4Kp1S9dBl7epLvM19e_apKRsarJGfgBhiRgiTlMLQ7bbFk`
    - Private Key: Stored securely as `VAPID_PRIVATE_KEY` secret
+     - Accepted formats: raw base64url (from `web-push`), PKCS8 PEM, or base64/base64url PKCS8 DER
+     - If logs show "Invalid PKCS8 input", ensure you pasted the raw base64url private key or a valid PKCS8 key
 
 ### Commands Used
 
@@ -125,6 +127,13 @@ wrangler kv:key list --binding SMA_SCHEDULES
 - CORS headers restrict access to BPtimer domain
 - No sensitive data stored on server
 - Push notifications use standard Web Push Protocol
+
+### VAPID Key Format Notes
+- Public key (`VAPID_PUBLIC_KEY`) must be the uncompressed P-256 public key in base64url (starts with `B...`, 65 bytes when decoded)
+- Private key (`VAPID_PRIVATE_KEY`) can be:
+  - Raw base64url private key (`d`) as output by `npx web-push generate-vapid-keys` (recommended)
+  - A PKCS8 PEM (-----BEGIN PRIVATE KEY-----)
+  - A base64/base64url PKCS8 DER
 
 ## Deployment
 

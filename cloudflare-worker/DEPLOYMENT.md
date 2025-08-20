@@ -52,7 +52,12 @@ VAPID_PUBLIC_KEY = "your-public-key-here"
 ```bash
 wrangler secret put VAPID_PRIVATE_KEY
 ```
-Paste the **private key** when prompted.
+When prompted, paste one of the following formats (recommended first):
+- The raw base64url private key string output by the command above (the second line)
+- Or a PKCS8 PEM block (-----BEGIN PRIVATE KEY----- ...)
+- Or a base64/base64url-encoded PKCS8 DER string
+
+If you see "Invalid PKCS8 input" in logs, the secret likely isn’t PKCS8; the worker now also accepts the raw base64url key and will import it as a JWK using the public key.
 
 ### 6. Deploy Worker
 ```bash

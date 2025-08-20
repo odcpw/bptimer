@@ -1,7 +1,7 @@
 // Service Worker for Meditation Timer PWA
 // Comprehensive offline support with intelligent caching
 
-const CACHE_VERSION = 5;
+const CACHE_VERSION = 6;
 const CACHE_NAME = `meditation-timer-v${CACHE_VERSION}`;
 const STATIC_CACHE = `static-${CACHE_NAME}`;
 const RUNTIME_CACHE = `runtime-${CACHE_NAME}`;
@@ -194,17 +194,18 @@ self.addEventListener('notificationclick', event => {
             type: 'window',
             includeUncontrolled: true
         }).then(clientList => {
+            const scopeUrl = self.registration.scope || (location.origin + location.pathname.replace(/service-worker\.js$/, ''));
+            const targetUrl = scopeUrl.endsWith('/') ? scopeUrl : scopeUrl + '/';
             // If app is already open, focus it
-            if (clientList.length > 0) {
-                const client = clientList[0];
-                if (client.url === location.origin + '/' || client.url === location.origin) {
+            for (const client of clientList) {
+                if (client.url.startsWith(targetUrl)) {
                     return client.focus();
                 }
             }
             
             // Otherwise, open the app
             if (clients.openWindow) {
-                return clients.openWindow('/');
+                return clients.openWindow(targetUrl);
             }
         })
     );
