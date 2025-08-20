@@ -632,7 +632,7 @@ class MeditationTimerApp {
             'decreaseBtn', 'increaseBtn', 'postureButtons', 'sessionInfo', 'currentPractice',
             'sessionPracticesList', 'recentSessionsList', 'timerView', 'statsView', 'smaView', 'aboutView',
             'favoritesList', 'selectedPractices', 'addPracticeBtn', 'practiceSelector', 'sessionName',
-            'saveFavoriteBtn', 'statsContent', 'exportBtn', 'importBtn', 'importFile', 'postSessionModal',
+            'saveFavoriteBtn', 'statsContent', 'exportBtn', 'importBtn', 'resetBtn', 'importFile', 'postSessionModal',
             'postSessionSelected', 'postSessionPostures', 'postAddPracticeBtn', 'postPracticeSelector',
             'saveSessionBtn', 'saveTimeOnlyBtn', 'cancelSessionBtn', 'modalCloseBtn', 'togglePlannerBtn', 
             'sessionPlannerContent', 'toastContainer', 'smaList', 'addSmaBtn', 'smaModal', 'smaModalCloseBtn',
@@ -765,6 +765,7 @@ class MeditationTimerApp {
         /** Data backup and restore handlers */
         this.elements.exportBtn.addEventListener('click', () => this.exportData());
         this.elements.importBtn.addEventListener('click', () => this.elements.importFile.click());
+        this.elements.resetBtn.addEventListener('click', () => this.resetAllData());
         this.elements.importFile.addEventListener('change', (e) => this.importData(e));
         
         /** Post-session recording modal handlers */
@@ -2160,6 +2161,57 @@ class MeditationTimerApp {
         }
         
         event.target.value = '';
+    }
+
+    /**
+     * Reset all session data and statistics
+     * Prompts user for confirmation before clearing IndexedDB and localStorage
+     */
+    async resetAllData() {
+        const confirmed = confirm(
+            'This will permanently delete ALL your session data and statistics. ' +
+            'Consider exporting your data first as a backup.\n\n' +
+            'This action cannot be undone. Are you sure?'
+        );
+        
+        if (!confirmed) return;
+        
+        // Double confirmation for destructive action
+        const doubleConfirmed = confirm(
+            'Are you absolutely certain? This will delete everything and cannot be reversed.'
+        );
+        
+        if (!doubleConfirmed) return;
+        
+        try {
+            // Clear IndexedDB session data
+            if (this.state.app.db) {
+                const transaction = this.state.app.db.transaction(['sessions'], 'readwrite');
+                const store = transaction.objectStore('sessions');
+                await store.clear();
+            }
+            
+            // Clear localStorage data
+            localStorage.removeItem('favorites');
+            localStorage.removeItem('recentSessions');
+            localStorage.removeItem('timerDuration');
+            localStorage.removeItem('appState');
+            
+            // Reset app state
+            this.state.app.favorites = [];
+            this.state.app.recentSessions = [];
+            
+            // Reload UI components to reflect cleared data
+            await this.loadRecentSessions();
+            this.loadFavorites();
+            await this.loadStatistics();
+            
+            this.showToast('All data has been reset successfully.', 'success');
+            
+        } catch (error) {
+            console.error('Reset failed:', error);
+            this.showToast('Error resetting data: ' + error.message, 'error');
+        }
     }
     
     /**

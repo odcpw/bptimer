@@ -131,8 +131,15 @@
                     </div>
                 </div>
             </div>
+            
+            <!-- Recent Sessions -->
+            <div class="recent-sessions">
+                <h3>Recent Sessions</h3>
+                <div id="recentSessionsList" class="sessions-list">
+                    <!-- Will be populated by JavaScript -->
+                </div>
+            </div>
         </div>
-
 
         <!-- Statistics View -->
         <div id="statsView" class="view-container" style="display: none;">
@@ -147,6 +154,7 @@
             <div class="data-controls">
                 <button id="exportBtn" class="control-btn">Export Data</button>
                 <button id="importBtn" class="control-btn">Import Data</button>
+                <button id="resetBtn" class="control-btn danger">Reset All Data</button>
                 <input type="file" id="importFile" accept=".json" style="display: none;" aria-label="Import data file">
             </div>
         </div>
@@ -220,14 +228,6 @@
             <div id="currentPractice">-</div>
             <div id="sessionPracticesList" class="session-practices-list" style="display: none;">
                 <!-- Will show list of practices for planned sessions -->
-            </div>
-        </div>
-
-        <!-- Recent Sessions -->
-        <div class="recent-sessions">
-            <h3>Recent Sessions</h3>
-            <div id="recentSessionsList" class="sessions-list">
-                <!-- Will be populated by JavaScript -->
             </div>
         </div>
 
