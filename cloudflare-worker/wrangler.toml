@@ -21,3 +21,7 @@ VAPID_PUBLIC_KEY = "BPYlMr-dC9cqX8W-tMBShBbus2vWmOdb6cRNVsJ5i4Kp1S9dBl7epLvM19e_
 
 # Secrets (set via wrangler secret put)
 # VAPID_PRIVATE_KEY will be set as secret
+
+# Enable real-time logs for debugging
+[observability.logs]
+enabled = true

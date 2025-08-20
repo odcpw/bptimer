@@ -3404,11 +3404,13 @@ class SMAManager {
             return;
         }
         
-        // TODO: Implement push notification subscription
-        // For now, just save the SMA with notification preference
-        if (notificationsEnabled) {
-            console.log('Notifications requested for SMA:', name);
-            // Future: Request permission and register with Cloudflare worker
+        // Handle push notification subscription
+        if (notificationsEnabled && !this.hasNotificationPermission()) {
+            const success = await this.pushManager.requestPermissionAndSubscribe();
+            if (!success) {
+                // User can still save SMA without notifications
+                this.showToast('SMA saved, but notifications setup failed', 'error');
+            }
         }
         
         const smaData = {
