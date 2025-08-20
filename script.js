@@ -3406,9 +3406,16 @@ class SMAManager {
         
         // Handle push notification subscription
         if (notificationsEnabled) {
-            const success = await this.pushManager.requestPermissionAndSubscribe();
-            if (!success) {
-                // User can still save SMA without notifications
+            console.log('Attempting to subscribe to push notifications...');
+            try {
+                const success = await this.pushManager.requestPermissionAndSubscribe();
+                console.log('Subscription result:', success);
+                if (!success) {
+                    // User can still save SMA without notifications
+                    this.showToast('SMA saved, but notifications setup failed', 'error');
+                }
+            } catch (error) {
+                console.error('Subscription failed with error:', error);
                 this.showToast('SMA saved, but notifications setup failed', 'error');
             }
         }
