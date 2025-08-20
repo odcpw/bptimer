@@ -3405,7 +3405,7 @@ class SMAManager {
         }
         
         // Handle push notification subscription
-        if (notificationsEnabled && !this.hasNotificationPermission()) {
+        if (notificationsEnabled) {
             const success = await this.pushManager.requestPermissionAndSubscribe();
             if (!success) {
                 // User can still save SMA without notifications
