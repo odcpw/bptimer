@@ -3499,20 +3499,43 @@ class SMAManager {
      * Add SMA to IndexedDB
      */
     async addSMAToDB(smaData) {
-        if (!this.db) return;
+        if (!this.db) {
+            console.error('❌ No database connection');
+            return;
+        }
+        
+        console.log('🔄 Adding SMA to database:', smaData);
         
         return new Promise((resolve, reject) => {
-            const transaction = this.db.transaction(['smas'], 'readwrite');
-            const store = transaction.objectStore('smas');
-            const request = store.add(smaData);
-            
-            // Wait for transaction completion, not just request success
-            transaction.oncomplete = () => {
-                console.log('✅ SMA added to database successfully');
-                resolve();
-            };
-            transaction.onerror = () => reject(transaction.error);
-            request.onerror = () => reject(request.error);
+            try {
+                const transaction = this.db.transaction(['smas'], 'readwrite');
+                const store = transaction.objectStore('smas');
+                const request = store.add(smaData);
+                
+                console.log('📝 IndexedDB transaction created');
+                
+                request.onsuccess = (event) => {
+                    console.log('✅ Add request successful, key:', event.target.result);
+                };
+                
+                transaction.oncomplete = () => {
+                    console.log('✅ Transaction completed - SMA saved to database');
+                    resolve();
+                };
+                
+                transaction.onerror = (event) => {
+                    console.error('❌ Transaction error:', event.target.error);
+                    reject(event.target.error);
+                };
+                
+                request.onerror = (event) => {
+                    console.error('❌ Add request error:', event.target.error);
+                    reject(event.target.error);
+                };
+            } catch (error) {
+                console.error('❌ Exception in addSMAToDB:', error);
+                reject(error);
+            }
         });
     }
     
