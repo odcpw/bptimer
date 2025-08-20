@@ -28,10 +28,10 @@
     <style>
         body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; }
         .loading-screen { display: flex; align-items: center; justify-content: center; min-height: 100vh; background: #0a0a0f; }
-        .splash-content { display: flex; flex-direction: column; align-items: center; gap: 20px; }
-        .splash-logo { width: 80px; height: 80px; filter: drop-shadow(0 4px 12px rgba(0, 212, 170, 0.3)); }
-        .splash-title { color: #ffffff; font-size: 1.8rem; font-weight: 600; margin: 0; text-align: center; }
-        .loading-spinner { width: 30px; height: 30px; border: 2px solid #2a2a38; border-top-color: #00d4aa; border-radius: 50%; animation: spin 1s linear infinite; }
+        .splash-content { display: flex; flex-direction: column; align-items: center; gap: 32px; max-width: 320px; padding: 0 24px; }
+        .splash-logo { width: 128px; height: 128px; filter: drop-shadow(0 4px 16px rgba(0, 212, 170, 0.4)); }
+        .splash-title { color: #ffffff; font-size: 2rem; font-weight: 600; margin: 0; text-align: center; line-height: 1.3; }
+        .loading-spinner { width: 40px; height: 40px; border: 3px solid #2a2a38; border-top-color: #00d4aa; border-radius: 50%; animation: spin 1s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
         .visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
     </style>

@@ -570,8 +570,8 @@ class MeditationTimerApp {
             // Register service worker
             await this.registerServiceWorker();
             
-            // Show splash screen for at least 1 second, then hide
-            const minSplashTime = 1000; // 1 second
+            // Show splash screen for 3 seconds, then hide
+            const minSplashTime = 3000; // 3 seconds
             setTimeout(() => {
                 this.hideLoadingScreen();
             }, minSplashTime);
