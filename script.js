@@ -3445,8 +3445,11 @@ class SMAManager {
         this.hideSMAModal();
         await this.loadSMAs();
         
-        // Handle push notification subscription based on current SMA state
+        // Handle push notification subscription based on updated SMA state
+        // Use the fresh SMA list after loadSMAs() to get accurate notification state
         const smasWithNotifications = this.smas.filter(sma => sma.notificationsEnabled);
+        console.log('SMAs after save:', this.smas.length, 'with notifications:', smasWithNotifications.length);
+        console.log('SMA notification states:', this.smas.map(sma => ({ name: sma.name, notificationsEnabled: sma.notificationsEnabled })));
         
         if (smasWithNotifications.length > 0) {
             // Subscribe if we have SMAs with notifications and not already subscribed
