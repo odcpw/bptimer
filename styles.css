@@ -443,27 +443,23 @@ button:focus:not(:focus-visible) {
     
     .nav-tab {
         flex: 1;
-        padding: 10px 1px;
-        font-size: 0.7rem;
+        padding: 12px 2px;
+        font-size: 0.9rem; /* Keep readable font size */
         text-align: center;
         min-width: 0; /* Allow text to shrink */
         white-space: nowrap; /* Prevent text wrapping */
-        overflow: hidden;
-        text-overflow: ellipsis;
         border-radius: 0; /* Remove border radius to save space */
+        border-left: none; /* Remove borders to save space */
+        border-right: none;
+        margin: 0; /* Remove any margins */
     }
 }
 
-/* Extra small mobile screens - abbreviate tab names */
-@media (max-width: 400px) {
-    .nav-tab[data-view="stats"]::after {
-        content: "Stats";
-    }
-    .nav-tab[data-view="stats"] {
-        font-size: 0;
-    }
-    .nav-tab[data-view="stats"]::after {
-        font-size: 0.75rem;
+/* Extra small mobile screens - minimal padding but readable text */
+@media (max-width: 360px) {
+    .nav-tab {
+        padding: 10px 1px;
+        font-size: 0.85rem; /* Slightly smaller but still readable */
     }
 }
 
