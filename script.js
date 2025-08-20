@@ -570,8 +570,11 @@ class MeditationTimerApp {
             // Register service worker
             await this.registerServiceWorker();
             
-            // Hide loading screen and show main content
-            this.hideLoadingScreen();
+            // Show splash screen for at least 1 second, then hide
+            const minSplashTime = 1000; // 1 second
+            setTimeout(() => {
+                this.hideLoadingScreen();
+            }, minSplashTime);
             
         } catch (error) {
             console.error('Failed to initialize app:', error);
@@ -627,12 +630,14 @@ class MeditationTimerApp {
         const elementIds = [
             'timerDisplay', 'customDuration', 'startBtn', 'pauseBtn', 'stopBtn',
             'decreaseBtn', 'increaseBtn', 'postureButtons', 'sessionInfo', 'currentPractice',
-            'sessionPracticesList', 'recentSessionsList', 'timerView', 'statsView',
+            'sessionPracticesList', 'recentSessionsList', 'timerView', 'statsView', 'smaView', 'aboutView',
             'favoritesList', 'selectedPractices', 'addPracticeBtn', 'practiceSelector', 'sessionName',
             'saveFavoriteBtn', 'statsContent', 'exportBtn', 'importBtn', 'importFile', 'postSessionModal',
             'postSessionSelected', 'postSessionPostures', 'postAddPracticeBtn', 'postPracticeSelector',
             'saveSessionBtn', 'saveTimeOnlyBtn', 'cancelSessionBtn', 'modalCloseBtn', 'togglePlannerBtn', 
-            'sessionPlannerContent', 'toastContainer'
+            'sessionPlannerContent', 'toastContainer', 'smaList', 'addSmaBtn', 'smaModal', 'smaModalCloseBtn',
+            'smaName', 'smaFrequency', 'smaTimesPerDay', 'smaNotifications', 'saveSmaBtn', 'cancelSmaBtn',
+            'timesPerDayGroup'
         ];
         
         elementIds.forEach(id => {
@@ -643,7 +648,7 @@ class MeditationTimerApp {
     // Initialize IndexedDB with better error handling
     async initializeDatabase() {
         return new Promise((resolve, reject) => {
-            const request = indexedDB.open('MeditationTimerDB', 2);
+            const request = indexedDB.open('MeditationTimerDB', 3);
             
             request.onerror = () => {
                 console.error('Failed to open database:', request.error);
@@ -670,6 +675,15 @@ class MeditationTimerApp {
                     sessionStore.createIndex('practice', 'practice', { unique: false });
                     // Add compound index for efficient date range queries
                     sessionStore.createIndex('dateRange', ['date'], { unique: false });
+                }
+                
+                // Create SMAs store if it doesn't exist
+                if (!db.objectStoreNames.contains('smas')) {
+                    const smaStore = db.createObjectStore('smas', { 
+                        keyPath: 'id' 
+                    });
+                    smaStore.createIndex('frequency', 'frequency', { unique: false });
+                    smaStore.createIndex('notificationsEnabled', 'notificationsEnabled', { unique: false });
                 }
             };
         });
@@ -700,6 +714,13 @@ class MeditationTimerApp {
      * Creates planning and post-session SessionBuilder instances
      */
     initializeUI() {
+        // Initialize SMA Manager
+        this.smaManager = new SMAManager(
+            this.state.app.db,
+            this.elements,
+            this.showToast.bind(this)
+        );
+        
         // Initialize session builders
         this.planningSessionBuilder = new SessionBuilder({
             practices: this.state.timer.selectedPractices,
@@ -729,8 +750,6 @@ class MeditationTimerApp {
         this.elements.startBtn.addEventListener('click', () => this.startTimer());
         this.elements.pauseBtn.addEventListener('click', () => this.pauseTimer());
         this.elements.stopBtn.addEventListener('click', () => this.stopTimer());
-        
-        /** Dark mode toggle - currently disabled as app uses dark theme only */
         
         /** Session planning event handlers */
         this.elements.addPracticeBtn.addEventListener('click', () => {
@@ -787,7 +806,7 @@ class MeditationTimerApp {
         }
         
         try {
-            const registration = await navigator.serviceWorker.register('/sw.js');
+            const registration = await navigator.serviceWorker.register('/service-worker.js');
             console.log('ServiceWorker registered:', registration.scope);
             
             /** Check for service worker updates every hour */
@@ -962,9 +981,11 @@ class MeditationTimerApp {
             tab.setAttribute('aria-selected', isActive);
         });
         
-        /** Toggle visibility of timer and statistics views */
+        /** Toggle visibility of timer, statistics, SMA, and about views */
         this.elements.timerView.style.display = view === 'timer' ? 'block' : 'none';
         this.elements.statsView.style.display = view === 'stats' ? 'block' : 'none';
+        this.elements.smaView.style.display = view === 'sma' ? 'block' : 'none';
+        this.elements.aboutView.style.display = view === 'about' ? 'block' : 'none';
         
         /** Lazy load statistics data when stats tab is selected */
         if (view === 'stats') {
@@ -1343,8 +1364,6 @@ class MeditationTimerApp {
             this.releaseWakeLock();
         }
     }
-    
-    /** Dark mode functionality - currently disabled as app uses dark theme only */
     
     /**
      * Save completed session to IndexedDB or localStorage
@@ -2936,6 +2955,479 @@ function showPracticeInfo(practiceName) {
         }
     };
     document.addEventListener('keydown', escapeHandler);
+}
+
+/**
+ * Push Notification Manager for SMAs
+ */
+class PushNotificationManager {
+    constructor(showToast) {
+        this.showToast = showToast;
+        this.workerUrl = 'https://bptimer-sma-worker.mail-12b.workers.dev';
+        this.vapidPublicKey = 'BPYlMr-dC9cqX8W-tMBShBbus2vWmOdb6cRNVsJ5i4Kp1S9dBl7epLvM19e_apKRsarJGfgBhiRgiTlMLQ7bbFk';
+        this.userId = this.generateUserId();
+    }
+    
+    async requestPermissionAndSubscribe() {
+        try {
+            // Check if notifications are supported
+            if (!('Notification' in window)) {
+                throw new Error('Notifications not supported in this browser');
+            }
+            
+            // Request permission
+            const permission = await Notification.requestPermission();
+            if (permission !== 'granted') {
+                throw new Error('Notification permission denied');
+            }
+            
+            // Check if service workers are supported
+            if (!('serviceWorker' in navigator)) {
+                throw new Error('Service workers not supported');
+            }
+            
+            // Register service worker if not already registered
+            const registration = await navigator.serviceWorker.ready;
+            
+            // Subscribe to push notifications
+            const subscription = await registration.pushManager.subscribe({
+                userVisibleOnly: true,
+                applicationServerKey: this.urlBase64ToUint8Array(this.vapidPublicKey)
+            });
+            
+            // Send subscription to worker
+            const response = await fetch(`${this.workerUrl}/subscribe`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    subscription,
+                    userId: this.userId,
+                    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
+                })
+            });
+            
+            if (!response.ok) {
+                throw new Error(`Subscription failed: ${response.status}`);
+            }
+            
+            this.showToast('Push notifications enabled successfully', 'success');
+            return true;
+            
+        } catch (error) {
+            console.error('Push notification setup failed:', error);
+            this.showToast(`Push notification setup failed: ${error.message}`, 'error');
+            return false;
+        }
+    }
+    
+    async updateSchedules(smas) {
+        const schedules = smas
+            .filter(sma => sma.notificationsEnabled)
+            .map(sma => ({
+                name: sma.name,
+                frequency: sma.frequency,
+                times: this.generateNotificationTimes(sma),
+                dayOfWeek: sma.dayOfWeek || 1, // Default Monday for weekly
+                timesPerDay: sma.timesPerDay
+            }));
+        
+        try {
+            const response = await fetch(`${this.workerUrl}/schedule`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    userId: this.userId,
+                    schedules
+                })
+            });
+            
+            if (!response.ok) {
+                throw new Error(`Schedule update failed: ${response.status}`);
+            }
+            
+            console.log('Notification schedules updated');
+            
+        } catch (error) {
+            console.error('Failed to update schedules:', error);
+            this.showToast('Failed to update notification schedules', 'error');
+        }
+    }
+    
+    generateNotificationTimes(sma) {
+        const times = [];
+        
+        switch (sma.frequency) {
+            case 'monthly':
+                times.push('09:00'); // 9 AM on first of month
+                break;
+            case 'weekly':
+                times.push('10:00'); // 10 AM on specified day
+                break;
+            case 'daily':
+                times.push('09:00'); // 9 AM daily
+                break;
+            case 'multiple':
+                // Generate spread-out times throughout the day
+                const baseHours = [8, 12, 16, 20]; // 8am, 12pm, 4pm, 8pm
+                for (let i = 0; i < Math.min(sma.timesPerDay || 3, 4); i++) {
+                    const hour = baseHours[i];
+                    const minute = Math.floor(Math.random() * 60);
+                    times.push(`${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`);
+                }
+                break;
+        }
+        
+        return times.sort();
+    }
+    
+    generateUserId() {
+        let userId = localStorage.getItem('sma-user-id');
+        if (!userId) {
+            userId = 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+            localStorage.setItem('sma-user-id', userId);
+        }
+        return userId;
+    }
+    
+    urlBase64ToUint8Array(base64String) {
+        const padding = '='.repeat((4 - base64String.length % 4) % 4);
+        const base64 = (base64String + padding)
+            .replace(/-/g, '+')
+            .replace(/_/g, '/');
+        
+        const rawData = window.atob(base64);
+        const outputArray = new Uint8Array(rawData.length);
+        
+        for (let i = 0; i < rawData.length; ++i) {
+            outputArray[i] = rawData.charCodeAt(i);
+        }
+        return outputArray;
+    }
+}
+
+/**
+ * SMA (Special Mindfulness Activities) Manager
+ * Handles CRUD operations and notification management for informal mindfulness practices
+ */
+class SMAManager {
+    constructor(db, elements, showToast) {
+        this.db = db;
+        this.elements = elements;
+        this.showToast = showToast;
+        this.smas = [];
+        this.currentEditingSMA = null;
+        
+        // Initialize push notification manager
+        this.pushManager = new PushNotificationManager(showToast);
+        
+        this.initializeEventListeners();
+        this.loadSMAs();
+    }
+    
+    /**
+     * Set up event listeners for SMA functionality
+     */
+    initializeEventListeners() {
+        // Add SMA button
+        this.elements.addSmaBtn.addEventListener('click', () => this.showSMAModal());
+        
+        // Modal controls
+        this.elements.smaModalCloseBtn.addEventListener('click', () => this.hideSMAModal());
+        this.elements.cancelSmaBtn.addEventListener('click', () => this.hideSMAModal());
+        this.elements.saveSmaBtn.addEventListener('click', () => this.saveSMA());
+        
+        // Frequency change handler
+        this.elements.smaFrequency.addEventListener('change', () => this.updateFrequencyOptions());
+        
+        // Close modal on outside click
+        this.elements.smaModal.addEventListener('click', (e) => {
+            if (e.target === this.elements.smaModal) {
+                this.hideSMAModal();
+            }
+        });
+    }
+    
+    /**
+     * Load all SMAs from IndexedDB
+     */
+    async loadSMAs() {
+        if (!this.db) {
+            console.warn('Database not available, SMAs will not persist');
+            return;
+        }
+        
+        try {
+            const transaction = this.db.transaction(['smas'], 'readonly');
+            const store = transaction.objectStore('smas');
+            const request = store.getAll();
+            
+            request.onsuccess = () => {
+                this.smas = request.result || [];
+                this.renderSMAList();
+            };
+            
+            request.onerror = () => {
+                console.error('Failed to load SMAs:', request.error);
+            };
+        } catch (error) {
+            console.error('Error loading SMAs:', error);
+        }
+    }
+    
+    /**
+     * Render the list of SMAs in the UI
+     */
+    renderSMAList() {
+        const listContainer = this.elements.smaList;
+        listContainer.innerHTML = '';
+        
+        if (this.smas.length === 0) {
+            const emptyMessage = document.createElement('div');
+            emptyMessage.className = 'empty-sma-message';
+            emptyMessage.innerHTML = `
+                <p>No Special Mindfulness Activities yet.</p>
+                <p>Add activities like "Opening doors mindfully" or "Conscious breathing at red lights" to build awareness throughout your day.</p>
+            `;
+            listContainer.appendChild(emptyMessage);
+            return;
+        }
+        
+        this.smas.forEach(sma => {
+            const smaItem = this.createSMAListItem(sma);
+            listContainer.appendChild(smaItem);
+        });
+    }
+    
+    /**
+     * Create a list item for an SMA
+     */
+    createSMAListItem(sma) {
+        const item = document.createElement('div');
+        item.className = 'sma-item';
+        
+        const frequencyText = this.getFrequencyText(sma);
+        const notificationStatus = sma.notificationsEnabled ? 'ON' : 'OFF';
+        
+        item.innerHTML = `
+            <div class="sma-content">
+                <div class="sma-name">${this.escapeHtml(sma.name)}</div>
+                <div class="sma-details">${frequencyText} • Notifications ${notificationStatus}</div>
+            </div>
+            <div class="sma-actions">
+                <button class="sma-edit-btn" data-id="${sma.id}">Edit</button>
+                <button class="sma-delete-btn" data-id="${sma.id}">Delete</button>
+            </div>
+        `;
+        
+        // Add event listeners
+        item.querySelector('.sma-edit-btn').addEventListener('click', () => this.editSMA(sma.id));
+        item.querySelector('.sma-delete-btn').addEventListener('click', () => this.deleteSMA(sma.id));
+        
+        return item;
+    }
+    
+    /**
+     * Get human-readable frequency text
+     */
+    getFrequencyText(sma) {
+        switch (sma.frequency) {
+            case 'monthly': return 'Monthly';
+            case 'weekly': return 'Weekly';
+            case 'daily': return 'Daily';
+            case 'multiple': return `${sma.timesPerDay}x daily`;
+            default: return sma.frequency;
+        }
+    }
+    
+    /**
+     * Show the SMA modal for adding/editing
+     */
+    showSMAModal(sma = null) {
+        this.currentEditingSMA = sma;
+        
+        // Set modal title
+        this.elements.smaModalTitle = document.getElementById('smaModalTitle');
+        this.elements.smaModalTitle.textContent = sma ? 'Edit Special Mindfulness Activity' : 'Add Special Mindfulness Activity';
+        
+        // Fill form if editing
+        if (sma) {
+            this.elements.smaName.value = sma.name;
+            this.elements.smaFrequency.value = sma.frequency;
+            this.elements.smaTimesPerDay.value = sma.timesPerDay || 3;
+            this.elements.smaNotifications.checked = sma.notificationsEnabled;
+        } else {
+            this.elements.smaName.value = '';
+            this.elements.smaFrequency.value = 'daily';
+            this.elements.smaTimesPerDay.value = '3';
+            this.elements.smaNotifications.checked = true;
+        }
+        
+        this.updateFrequencyOptions();
+        this.elements.smaModal.style.display = 'flex';
+        this.elements.smaName.focus();
+    }
+    
+    /**
+     * Hide the SMA modal
+     */
+    hideSMAModal() {
+        this.elements.smaModal.style.display = 'none';
+        this.currentEditingSMA = null;
+    }
+    
+    /**
+     * Update frequency options visibility
+     */
+    updateFrequencyOptions() {
+        const frequency = this.elements.smaFrequency.value;
+        this.elements.timesPerDayGroup.style.display = frequency === 'multiple' ? 'block' : 'none';
+    }
+    
+    /**
+     * Save SMA (add or update)
+     */
+    async saveSMA() {
+        const name = this.elements.smaName.value.trim();
+        const frequency = this.elements.smaFrequency.value;
+        const timesPerDay = parseInt(this.elements.smaTimesPerDay.value);
+        const notificationsEnabled = this.elements.smaNotifications.checked;
+        
+        // Validation
+        if (!name) {
+            this.showToast('Please enter an activity name', 'error');
+            return;
+        }
+        
+        if (name.length > 100) {
+            this.showToast('Activity name too long (max 100 characters)', 'error');
+            return;
+        }
+        
+        // If notifications are being enabled for the first time, request permission
+        if (notificationsEnabled && !this.hasNotificationPermission()) {
+            const permissionGranted = await this.pushManager.requestPermissionAndSubscribe();
+            if (!permissionGranted) {
+                // User denied permission - save SMA without notifications
+                this.elements.smaNotifications.checked = false;
+                this.showToast('SMA saved without notifications (permission denied)', 'info');
+                return; // Let user try again if they want
+            }
+        }
+        
+        const smaData = {
+            name,
+            frequency,
+            timesPerDay: frequency === 'multiple' ? timesPerDay : undefined,
+            notificationsEnabled,
+            updatedAt: new Date().toISOString()
+        };
+        
+        if (this.currentEditingSMA) {
+            // Update existing SMA
+            smaData.id = this.currentEditingSMA.id;
+            smaData.createdAt = this.currentEditingSMA.createdAt;
+            await this.updateSMAInDB(smaData);
+        } else {
+            // Create new SMA
+            smaData.id = 'sma_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+            smaData.createdAt = new Date().toISOString();
+            await this.addSMAToDB(smaData);
+        }
+        
+        this.hideSMAModal();
+        await this.loadSMAs();
+        
+        // Update push notification schedules if any SMAs have notifications enabled
+        const smasWithNotifications = this.smas.filter(sma => sma.notificationsEnabled);
+        if (smasWithNotifications.length > 0) {
+            await this.pushManager.updateSchedules(this.smas);
+        }
+        
+        this.showToast(`SMA ${this.currentEditingSMA ? 'updated' : 'added'} successfully`, 'success');
+    }
+    
+    /**
+     * Check if notification permission is already granted
+     */
+    hasNotificationPermission() {
+        return 'Notification' in window && Notification.permission === 'granted';
+    }
+    
+    /**
+     * Add SMA to IndexedDB
+     */
+    async addSMAToDB(smaData) {
+        if (!this.db) return;
+        
+        return new Promise((resolve, reject) => {
+            const transaction = this.db.transaction(['smas'], 'readwrite');
+            const store = transaction.objectStore('smas');
+            const request = store.add(smaData);
+            
+            request.onsuccess = () => resolve();
+            request.onerror = () => reject(request.error);
+        });
+    }
+    
+    /**
+     * Update SMA in IndexedDB
+     */
+    async updateSMAInDB(smaData) {
+        if (!this.db) return;
+        
+        return new Promise((resolve, reject) => {
+            const transaction = this.db.transaction(['smas'], 'readwrite');
+            const store = transaction.objectStore('smas');
+            const request = store.put(smaData);
+            
+            request.onsuccess = () => resolve();
+            request.onerror = () => reject(request.error);
+        });
+    }
+    
+    /**
+     * Edit an existing SMA
+     */
+    editSMA(smaId) {
+        const sma = this.smas.find(s => s.id === smaId);
+        if (sma) {
+            this.showSMAModal(sma);
+        }
+    }
+    
+    /**
+     * Delete an SMA with confirmation
+     */
+    async deleteSMA(smaId) {
+        const sma = this.smas.find(s => s.id === smaId);
+        if (!sma) return;
+        
+        if (confirm(`Delete "${sma.name}"?`)) {
+            if (this.db) {
+                try {
+                    const transaction = this.db.transaction(['smas'], 'readwrite');
+                    const store = transaction.objectStore('smas');
+                    await store.delete(smaId);
+                } catch (error) {
+                    console.error('Failed to delete SMA:', error);
+                    this.showToast('Failed to delete SMA', 'error');
+                    return;
+                }
+            }
+            
+            await this.loadSMAs();
+            this.showToast('SMA deleted successfully', 'success');
+        }
+    }
+    
+    /**
+     * Escape HTML to prevent XSS
+     */
+    escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
 }
 
 /**

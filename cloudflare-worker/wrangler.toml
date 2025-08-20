@@ -1,0 +1,23 @@
+name = "bptimer-sma-worker"
+main = "sma-notification-worker.js"
+compatibility_date = "2024-01-15"
+
+# KV namespaces for storing data
+[[kv_namespaces]]
+binding = "SMA_SUBSCRIPTIONS"
+id = "453bff7add9a4f84b64586ba984045ea"
+
+[[kv_namespaces]]
+binding = "SMA_SCHEDULES" 
+id = "c4fb2d230704490e8df0d2ba3d29487b"
+
+# Cron trigger for notifications (every 15 minutes)
+[triggers]
+crons = ["*/15 * * * *"]
+
+# Environment variables
+[vars]
+VAPID_PUBLIC_KEY = "BPYlMr-dC9cqX8W-tMBShBbus2vWmOdb6cRNVsJ5i4Kp1S9dBl7epLvM19e_apKRsarJGfgBhiRgiTlMLQ7bbFk"
+
+# Secrets (set via wrangler secret put)
+# VAPID_PRIVATE_KEY will be set as secret

@@ -1474,11 +1474,31 @@ input[type="text"]:focus,
     height: 100%;
     background: var(--bg-primary);
     display: flex;
-    flex-direction: column;
     align-items: center;
     justify-content: center;
     z-index: 2000;
     transition: opacity 0.3s ease;
+}
+
+.splash-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 24px;
+    text-align: center;
+}
+
+.splash-logo {
+    width: 96px;
+    height: 96px;
+}
+
+.splash-title {
+    color: var(--text-primary);
+    font-size: 1.8rem;
+    font-weight: 600;
+    margin: 0;
+    text-align: center;
 }
 
 .loading-spinner {
@@ -1501,4 +1521,283 @@ input[type="text"]:focus,
 @keyframes fadeInOut {
     0%, 100% { opacity: 0.5; }
     50% { opacity: 1; }
+}
+
+/* About page styles */
+.about-content {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px 0;
+}
+
+.about-section {
+    margin-bottom: 40px;
+}
+
+.about-section h3 {
+    color: var(--accent);
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 20px;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 12px;
+}
+
+.about-section h4 {
+    color: var(--text-primary);
+    font-size: 1.2rem;
+    font-weight: 500;
+    margin: 20px 0 12px 0;
+}
+
+.about-section p {
+    color: var(--text-secondary);
+    line-height: 1.7;
+    margin-bottom: 16px;
+}
+
+.about-section ul {
+    padding-left: 20px;
+    margin: 12px 0;
+}
+
+.about-section li {
+    color: var(--text-secondary);
+    line-height: 1.6;
+    margin-bottom: 8px;
+}
+
+.about-section li strong {
+    color: var(--accent);
+    font-weight: 600;
+}
+
+.usage-guide {
+    background: var(--bg-secondary);
+    padding: 24px;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border);
+    margin-top: 16px;
+}
+
+.gratitude-content {
+    background: linear-gradient(135deg, var(--bg-secondary), rgba(0, 212, 170, 0.05));
+    padding: 24px;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-light);
+    margin-top: 16px;
+}
+
+.gratitude-content strong {
+    color: var(--accent);
+    font-weight: 600;
+}
+
+/* SMA (Special Mindfulness Activities) styles */
+.sma-content {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px 0;
+}
+
+.sma-content h3 {
+    color: var(--accent);
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 12px;
+}
+
+.sma-description {
+    color: var(--text-secondary);
+    margin-bottom: 24px;
+    font-size: 1rem;
+    line-height: 1.5;
+}
+
+.sma-list {
+    margin-bottom: 24px;
+}
+
+.empty-sma-message {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--text-secondary);
+    background: var(--bg-secondary);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border);
+}
+
+.empty-sma-message p {
+    margin: 0 0 12px 0;
+    line-height: 1.6;
+}
+
+.sma-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 20px;
+    margin-bottom: 12px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    transition: var(--transition);
+}
+
+.sma-item:hover {
+    border-color: var(--accent-light);
+    background: var(--bg-tertiary);
+}
+
+.sma-content-inner {
+    flex: 1;
+}
+
+.sma-name {
+    color: var(--text-primary);
+    font-weight: 500;
+    font-size: 1rem;
+    margin-bottom: 4px;
+}
+
+.sma-details {
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+}
+
+.sma-actions {
+    display: flex;
+    gap: 8px;
+    margin-left: 16px;
+}
+
+.sma-edit-btn,
+.sma-delete-btn {
+    padding: 6px 12px;
+    border: 1px solid var(--border);
+    background: var(--bg-tertiary);
+    color: var(--text-secondary);
+    border-radius: var(--radius-sm);
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.sma-edit-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: var(--bg-secondary);
+}
+
+.sma-delete-btn:hover {
+    border-color: var(--danger);
+    color: var(--danger);
+    background: var(--bg-secondary);
+}
+
+/* SMA Modal Form Styles */
+.sma-form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    margin: 24px 0;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.form-group label {
+    color: var(--text-primary);
+    font-weight: 500;
+    font-size: 0.875rem;
+}
+
+.form-group input,
+.form-group select {
+    padding: 12px 16px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    font-size: 1rem;
+    transition: var(--transition);
+}
+
+.form-group input:focus,
+.form-group select:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-light);
+}
+
+.form-group input::placeholder {
+    color: var(--text-secondary);
+}
+
+/* Toggle switch for notifications */
+.toggle-label {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    font-size: 0.875rem;
+    color: var(--text-primary);
+}
+
+.toggle-label input[type="checkbox"] {
+    display: none;
+}
+
+.toggle-slider {
+    position: relative;
+    width: 48px;
+    height: 24px;
+    background: var(--border);
+    border-radius: 12px;
+    transition: var(--transition);
+}
+
+.toggle-slider::before {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 20px;
+    height: 20px;
+    background: var(--text-primary);
+    border-radius: 50%;
+    transition: var(--transition);
+}
+
+.toggle-label input[type="checkbox"]:checked + .toggle-slider {
+    background: var(--accent);
+}
+
+.toggle-label input[type="checkbox"]:checked + .toggle-slider::before {
+    transform: translateX(24px);
+    background: white;
+}
+
+/* Responsive adjustments for mobile */
+@media (max-width: 480px) {
+    .sma-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+    
+    .sma-actions {
+        align-self: stretch;
+        justify-content: flex-end;
+        margin-left: 0;
+    }
+    
+    .sma-edit-btn,
+    .sma-delete-btn {
+        flex: 1;
+        text-align: center;
+    }
 }

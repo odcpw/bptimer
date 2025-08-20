@@ -1,0 +1,16 @@
+{
+  "name": "bptimer-sma-worker",
+  "version": "1.0.0",
+  "description": "Cloudflare Worker for BPtimer Special Mindfulness Activities push notifications",
+  "main": "sma-notification-worker.js",
+  "scripts": {
+    "deploy": "wrangler deploy",
+    "dev": "wrangler dev"
+  },
+  "dependencies": {
+    "web-push": "^3.6.7"
+  },
+  "devDependencies": {
+    "wrangler": "^3.0.0"
+  }
+}

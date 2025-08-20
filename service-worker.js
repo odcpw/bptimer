@@ -146,6 +146,70 @@ self.addEventListener('fetch', event => {
     );
 });
 
+// Push event - handle incoming push notifications
+self.addEventListener('push', event => {
+    let notificationData = {
+        title: 'Mindfulness Reminder',
+        body: 'Time for your practice',
+        icon: '/icon-192.png',
+        badge: '/icon-192.png',
+        tag: 'sma-reminder',
+        data: {}
+    };
+    
+    if (event.data) {
+        try {
+            const payload = event.data.json();
+            notificationData = { ...notificationData, ...payload };
+        } catch (error) {
+            console.error('Failed to parse push payload:', error);
+        }
+    }
+    
+    event.waitUntil(
+        self.registration.showNotification(notificationData.title, {
+            body: notificationData.body,
+            icon: notificationData.icon,
+            badge: notificationData.badge,
+            tag: notificationData.tag,
+            data: notificationData.data,
+            requireInteraction: false,
+            actions: [
+                {
+                    action: 'open',
+                    title: 'Open App',
+                    icon: '/icon-192.png'
+                }
+            ]
+        })
+    );
+});
+
+// Notification click event - handle user interaction with notifications
+self.addEventListener('notificationclick', event => {
+    event.notification.close();
+    
+    event.waitUntil(
+        clients.matchAll({
+            type: 'window',
+            includeUncontrolled: true
+        }).then(clientList => {
+            // If app is already open, focus it
+            if (clientList.length > 0) {
+                const client = clientList[0];
+                if (client.url === location.origin + '/' || client.url === location.origin) {
+                    return client.focus();
+                }
+            }
+            
+            // Otherwise, open the app
+            if (clients.openWindow) {
+                return clients.openWindow('/');
+            }
+        })
+    );
+});
+
 // Message event - handle cache updates
 self.addEventListener('message', event => {
     if (event.data && event.data.type === 'SKIP_WAITING') {

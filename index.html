@@ -28,7 +28,10 @@
     <style>
         body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; }
         .loading-screen { display: flex; align-items: center; justify-content: center; min-height: 100vh; background: #0a0a0f; }
-        .loading-spinner { width: 40px; height: 40px; border: 3px solid #2a2a38; border-top-color: #00d4aa; border-radius: 50%; animation: spin 1s linear infinite; }
+        .splash-content { display: flex; flex-direction: column; align-items: center; gap: 20px; }
+        .splash-logo { width: 80px; height: 80px; filter: drop-shadow(0 4px 12px rgba(0, 212, 170, 0.3)); }
+        .splash-title { color: #ffffff; font-size: 1.8rem; font-weight: 600; margin: 0; text-align: center; }
+        .loading-spinner { width: 30px; height: 30px; border: 2px solid #2a2a38; border-top-color: #00d4aa; border-radius: 50%; animation: spin 1s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
         .visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
     </style>
@@ -36,7 +39,11 @@
 <body>
     <!-- Initial loading screen -->
     <div id="loadingScreen" class="loading-screen">
-        <div class="loading-spinner"></div>
+        <div class="splash-content">
+            <img src="icon-192.png" alt="BPtimer Logo" class="splash-logo">
+            <h1 class="splash-title">Balanced Practice Timer</h1>
+            <div class="loading-spinner"></div>
+        </div>
         <span class="visually-hidden">Loading meditation timer...</span>
     </div>
     
@@ -77,6 +84,8 @@
         <div class="nav-tabs">
             <button class="nav-tab active" data-view="timer" role="tab" aria-selected="true" aria-controls="timerView">Timer</button>
             <button class="nav-tab" data-view="stats" role="tab" aria-selected="false" aria-controls="statsView">Statistics</button>
+            <button class="nav-tab" data-view="sma" role="tab" aria-selected="false" aria-controls="smaView">SMAs</button>
+            <button class="nav-tab" data-view="about" role="tab" aria-selected="false" aria-controls="aboutView">About</button>
         </div>
         </nav>
 
@@ -139,6 +148,69 @@
                 <button id="exportBtn" class="control-btn">Export Data</button>
                 <button id="importBtn" class="control-btn">Import Data</button>
                 <input type="file" id="importFile" accept=".json" style="display: none;" aria-label="Import data file">
+            </div>
+        </div>
+
+        <!-- SMA View -->
+        <div id="smaView" class="view-container" style="display: none;">
+            <div class="sma-content">
+                <h3>Special Mindfulness Activities</h3>
+                <p class="sma-description">Informal practices to build mindfulness throughout your daily life.</p>
+                
+                <div id="smaList" class="sma-list">
+                    <!-- SMAs will be populated by JavaScript -->
+                </div>
+                
+                <button id="addSmaBtn" class="control-btn">Add SMA</button>
+            </div>
+        </div>
+
+        <!-- About View -->
+        <div id="aboutView" class="view-container" style="display: none;">
+            <div class="about-content">
+                <section class="about-section">
+                    <h3>How to Use BPtimer</h3>
+                    <div class="usage-guide">
+                        <h4>Getting Started</h4>
+                        <ul>
+                            <li><strong>Set Duration:</strong> Use the +5/-5 buttons to adjust your timer (5-120 minutes)</li>
+                            <li><strong>Start Timer:</strong> Click Start to begin your session</li>
+                            <li><strong>Timer Controls:</strong> Pause/resume or stop your session as needed</li>
+                        </ul>
+                        
+                        <h4>Session Planning (Optional)</h4>
+                        <ul>
+                            <li><strong>Plan Structure:</strong> Expand "Plan Session" to organize your practice</li>
+                            <li><strong>Choose Posture:</strong> Select sitting, standing, walking, or lying down</li>
+                            <li><strong>Add Practices:</strong> Select specific meditation techniques in order</li>
+                            <li><strong>Save Favorites:</strong> Save common sessions for quick access</li>
+                        </ul>
+                        
+                        <h4>Session Recording</h4>
+                        <ul>
+                            <li><strong>Track Practice:</strong> After each session, record what you actually practiced</li>
+                            <li><strong>View Statistics:</strong> Monitor your practice patterns and consistency</li>
+                            <li><strong>Export Data:</strong> Backup your meditation history</li>
+                        </ul>
+                        
+                        <h4><strong>Balanced Practice</strong></h4>
+                        <p>BPtimer encourages a balanced approach to meditation, incorporating various techniques and postures to support comprehensive mental development. Regular practice with awareness of what you're cultivating leads to balanced mental development.</p>
+                        
+                        <h4><strong>Special Mindfulness Activities (SMAs)</strong></h4>
+                        <p>SMAs are informal practices you do throughout your day - like opening doors mindfully or taking conscious breaths. Set reminders to help build these habits of awareness in daily life.</p>
+                    </div>
+                </section>
+                
+                <section class="about-section">
+                    <h3>Gratitude</h3>
+                    <div class="gratitude-content">
+                        <p>This app is created with gratitude to <strong>Rosemary and Steve Weissmann</strong>, whose dedicated teaching has brought Buddha's profound teachings to practitioners in a balanced and practical way.</p>
+                        
+                        <p>Their skillful guidance helps students develop a comprehensive and balanced meditation practice.</p>
+                        
+                        <p>May this simple timer support your practice and contribute to the growth of compassionate understanding.</p>
+                    </div>
+                </section>
             </div>
         </div>
 
@@ -206,6 +278,54 @@
                 </div>
             </div>
         </div>
+
+        <!-- SMA Modal -->
+        <div id="smaModal" class="modal" style="display: none;">
+            <div class="modal-content">
+                <button class="modal-close" id="smaModalCloseBtn" aria-label="Close modal">×</button>
+                <h2 id="smaModalTitle">Add Special Mindfulness Activity</h2>
+                
+                <div class="sma-form">
+                    <div class="form-group">
+                        <label for="smaName">Activity Name:</label>
+                        <input type="text" id="smaName" placeholder="e.g., Opening doors mindfully" maxlength="100">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="smaFrequency">Frequency:</label>
+                        <select id="smaFrequency">
+                            <option value="monthly">Monthly</option>
+                            <option value="weekly">Weekly</option>
+                            <option value="daily" selected>Daily</option>
+                            <option value="multiple">Multiple times per day</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group" id="timesPerDayGroup" style="display: none;">
+                        <label for="smaTimesPerDay">Times per day:</label>
+                        <select id="smaTimesPerDay">
+                            <option value="2">2</option>
+                            <option value="3" selected>3</option>
+                            <option value="4">4</option>
+                            <option value="5">5</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="toggle-label">
+                            <input type="checkbox" id="smaNotifications" checked>
+                            <span class="toggle-slider"></span>
+                            Push Notifications
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="modal-actions">
+                    <button id="saveSmaBtn" class="control-btn primary">Save</button>
+                    <button id="cancelSmaBtn" class="control-btn">Cancel</button>
+                </div>
+            </div>
+        </div>
     </main>
 
     <!-- Load main script with defer for better performance -->
@@ -213,10 +333,7 @@
     
     <!-- Inline script to handle initial loading -->
     <script>
-        // Check for dark mode preference early to prevent flash
-        if (localStorage.getItem('darkMode') === 'true') {
-            document.body.classList.add('dark-mode');
-        }
+        // App is always in dark mode - no preference checking needed
         
         // Service Worker update notification
         if ('serviceWorker' in navigator) {
