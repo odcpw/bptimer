@@ -1,7 +1,7 @@
 // Service Worker for Meditation Timer PWA
 // Comprehensive offline support with intelligent caching
 
-const CACHE_VERSION = 16;
+const CACHE_VERSION = 17;
 const CACHE_NAME = `meditation-timer-v${CACHE_VERSION}`;
 const STATIC_CACHE = `static-${CACHE_NAME}`;
 const RUNTIME_CACHE = `runtime-${CACHE_NAME}`;
@@ -16,6 +16,7 @@ const STATIC_ASSETS = [
     './src/PracticeConfig.js',
     './src/DataManager.js',
     './src/UIManager.js',
+    './src/constants.js',
     './src/PushNotificationManager.js',
     './src/SMAManager.js',
     './src/db.js',
@@ -27,6 +28,7 @@ const STATIC_ASSETS = [
     './manifest.json',
     './icon-192.png',
     './icon-512.png',
+    'https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js',
     './bell.mp3',
     './bell.ogg'
 ];

@@ -139,18 +139,31 @@ const PRACTICE_CATEGORY_MAP = new Map();
 /**
  * Build reverse lookup map for practice categories
  * Called once on initialization for O(1) lookups
- * This avoids nested loops when determining practice categories
- * Used extensively by Stats for categorizing sessions
+ * 
+ * This optimization avoids nested loops when determining practice categories,
+ * which is critical for performance since Stats module frequently needs to
+ * categorize sessions for chart generation and analysis.
+ * 
+ * Performance comparison:
+ * - Without map: O(n*m) where n=practices, m=categories (nested loop search)
+ * - With map: O(1) direct lookup
+ * 
+ * Used extensively by Stats for categorizing sessions in:
+ * - Practice distribution charts
+ * - Category trend analysis  
+ * - Session filtering and grouping
  */
 function buildPracticeCategoryMap() {
     for (const [categoryKey, category] of Object.entries(PRACTICE_CONFIG)) {
-        // Map direct practices
+        // Map direct practices (e.g., "Basic Compassion Lovingkindness" → "compassion")
         for (const practiceName of Object.keys(category.practices)) {
             PRACTICE_CATEGORY_MAP.set(practiceName, categoryKey);
             
-            // Map subcategory practices
+            // Handle hierarchical practices with subcategories
+            // Some practices have nested structure like "Diffusing/Defusing" with sub-options
             const subcategories = category.practices[practiceName];
             if (subcategories && typeof subcategories === 'object') {
+                // Map each subcategory option to the parent category
                 for (const options of Object.values(subcategories)) {
                     if (Array.isArray(options)) {
                         options.forEach(option => PRACTICE_CATEGORY_MAP.set(option, categoryKey));

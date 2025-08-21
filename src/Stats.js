@@ -1,11 +1,50 @@
+/**
+ * Stats.js - Statistics processing and visualization
+ * 
+ * Handles session data analysis and chart generation for meditation statistics.
+ * Processes session history from IndexedDB to create various visualizations
+ * including calendar views, practice distributions, category trends, and
+ * time analysis charts using Chart.js.
+ * 
+ * Key responsibilities:
+ * - Load and process session data from storage
+ * - Generate statistics for different time periods
+ * - Create interactive charts and calendar views
+ * - Handle Chart.js loading with offline fallback
+ * - Optimize rendering for large datasets
+ * 
+ * @module Stats
+ */
 export default class Stats {
+  /**
+   * Initialize statistics module with app dependencies
+   * @param {Object} app - Main app instance with state and elements
+   * @param {Function} getCategoryForPractice - Function to map practices to categories
+   * @param {Object} categoryColors - Color mapping for practice categories
+   */
   constructor(app, getCategoryForPractice, categoryColors) {
+    // Validate constructor parameters
+    if (!app || typeof app !== 'object') {
+      throw new Error('Stats: app instance is required');
+    }
+    if (typeof getCategoryForPractice !== 'function') {
+      throw new Error('Stats: getCategoryForPractice must be a function');
+    }
+    if (!categoryColors || typeof categoryColors !== 'object') {
+      throw new Error('Stats: categoryColors object is required');
+    }
+    
     this.app = app;
     this.getCategoryForPractice = getCategoryForPractice;
     this.CATEGORY_COLORS = categoryColors;
     this.chartLoaded = false;
   }
 
+  /**
+   * Set statistics content area to display loading, offline, or empty state
+   * @param {string} state - Display state ('loading', 'offline', 'empty')
+   * @returns {void}
+   */
   setStatsContent(state) {
     const content = this.app.elements.statsContent;
     content.innerHTML = '';
@@ -29,6 +68,11 @@ export default class Stats {
     }
   }
 
+    /**
+   * Load and display statistics for current time period
+   * Fetches data from IndexedDB and generates visualizations
+   * @returns {Promise<void>}
+   */
   async loadStatistics() {
     this.setStatsContent('loading');
     if (!this.chartLoaded) {
@@ -57,6 +101,12 @@ export default class Stats {
     });
   }
 
+  /**
+   * Process raw session data into statistics for visualization
+   * Aggregates sessions by date, practice, category, and posture
+   * @param {Array<Object>} sessions - Array of session objects from database
+   * @returns {Object} Processed statistics data for chart generation
+   */
   processStatisticsData(sessions) {
     const sessionsByDate = {};
     const practiceCounts = {};
@@ -91,29 +141,21 @@ export default class Stats {
     return { sessionsByDate, practiceCounts, dateData, postureCounts, durationsByDate };
   }
 
+  /**
+   * Dynamically load Chart.js library from CDN or cache
+   * Chart.js is cached by service worker during first load, so this works offline
+   * @returns {Promise<void>} Resolves when Chart.js is loaded and ready
+   */
   async loadChartJS() {
     if (window.Chart) return;
-    try {
-      const script = document.createElement('script');
-      script.src = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js';
-      return new Promise((resolve, reject) => {
-        script.onload = resolve;
-        script.onerror = reject;
-        document.head.appendChild(script);
-      });
-    } catch (error) {
-      if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
-        const channel = new MessageChannel();
-        return new Promise((resolve, reject) => {
-          channel.port1.onmessage = (event) => {
-            if (event.data.success) this.loadChartJS().then(resolve).catch(reject);
-            else reject(new Error('Failed to cache Chart.js'));
-          };
-          navigator.serviceWorker.controller.postMessage({ type: 'CACHE_CHART_JS' }, [channel.port2]);
-        });
-      }
-      throw error;
-    }
+    
+    const script = document.createElement('script');
+    script.src = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js';
+    return new Promise((resolve, reject) => {
+      script.onload = resolve;
+      script.onerror = reject;
+      document.head.appendChild(script);
+    });
   }
 
   async getSessionsForPeriod(period) {

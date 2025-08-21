@@ -1,5 +1,62 @@
+/**
+ * SessionBuilder.js - Unified session building component
+ * 
+ * Reusable component for building meditation sessions with practice selection,
+ * ordering, and posture configuration. Used for both session planning and
+ * post-session recording. Supports drag-and-drop reordering with both mouse
+ * and touch interactions.
+ * 
+ * Key responsibilities:
+ * - Practice selection from hierarchical categories
+ * - Drag-and-drop practice reordering
+ * - Posture selection interface
+ * - Session state management and persistence
+ * - Event listener cleanup and memory management
+ * 
+ * @module SessionBuilder
+ */
 export default class SessionBuilder {
+  /**
+   * Initialize SessionBuilder with configuration and dependencies
+   * @param {Object} config - Configuration object
+   * @param {Array<string>} config.practices - Initial practices list
+   * @param {string} config.posture - Initial posture selection
+   * @param {HTMLElement} config.practicesContainer - Container for practice list
+   * @param {HTMLElement} config.postureContainer - Container for posture buttons
+   * @param {HTMLElement} config.practiceSelector - Container for practice selection UI
+   * @param {Function} config.onUpdate - Callback when session changes
+   * @param {string} config.namespace - Namespace for data attributes
+   * @param {Array<string>} config.postures - Available posture options
+   * @param {Object} config.practiceConfig - Practice configuration data
+   * @param {Function} config.createCategoryElement - Factory for category elements
+   */
   constructor(config) {
+    // Validate configuration object
+    if (!config || typeof config !== 'object') {
+      throw new Error('SessionBuilder: config object is required');
+    }
+    if (config.practices && !Array.isArray(config.practices)) {
+      throw new Error('SessionBuilder: config.practices must be an array');
+    }
+    if (config.posture && typeof config.posture !== 'string') {
+      throw new Error('SessionBuilder: config.posture must be a string');
+    }
+    if (config.onUpdate && typeof config.onUpdate !== 'function') {
+      throw new Error('SessionBuilder: config.onUpdate must be a function');
+    }
+    if (config.namespace && typeof config.namespace !== 'string') {
+      throw new Error('SessionBuilder: config.namespace must be a string');
+    }
+    if (config.postures && !Array.isArray(config.postures)) {
+      throw new Error('SessionBuilder: config.postures must be an array');
+    }
+    if (config.practiceConfig && typeof config.practiceConfig !== 'object') {
+      throw new Error('SessionBuilder: config.practiceConfig must be an object');
+    }
+    if (config.createCategoryElement && typeof config.createCategoryElement !== 'function') {
+      throw new Error('SessionBuilder: config.createCategoryElement must be a function');
+    }
+    
     this.practices = config.practices || [];
     this.posture = config.posture || 'Sitting';
     this.practicesContainer = config.practicesContainer;
@@ -12,6 +69,10 @@ export default class SessionBuilder {
     this.practiceConfig = config.practiceConfig || {};
     this.createCategoryElement = config.createCategoryElement;
 
+    // Dual drag implementation strategy:
+    // HTML5 Drag API (handleDrag*) works well on desktop but has poor mobile support
+    // Pointer Events API (handlePointer*) provides consistent touch/mouse experience
+    // Both systems coexist to maximize compatibility across all devices
     this.handleDragStart = this.handleDragStart.bind(this);
     this.handleDragEnd = this.handleDragEnd.bind(this);
     this.handleDragOver = this.handleDragOver.bind(this);
@@ -22,15 +83,21 @@ export default class SessionBuilder {
     this.handlePointerMove = this.handlePointerMove.bind(this);
     this.handlePointerUp = this.handlePointerUp.bind(this);
 
+    // Pointer drag state for touch/mobile compatibility
     this.pointerDragging = false;
     this.pointerStartY = 0;
     this.draggedClone = null;
+    // WeakMap prevents memory leaks by allowing garbage collection of DOM elements
     this.activeListeners = new WeakMap();
 
     this.initializePostureButtons();
     this.updatePracticesList();
   }
 
+  /**
+   * Create and display posture selection buttons
+   * @returns {void}
+   */
   initializePostureButtons() {
     if (!this.postureContainer) return;
     const fragment = document.createDocumentFragment();
@@ -48,6 +115,11 @@ export default class SessionBuilder {
     this.postureContainer.appendChild(fragment);
   }
 
+  /**
+   * Select a posture and update UI state
+   * @param {string} posture - Posture name to select
+   * @returns {void}
+   */
   selectPosture(posture) {
     this.posture = posture;
     this.postureContainer.querySelectorAll('.posture-btn').forEach(btn => {
@@ -56,6 +128,11 @@ export default class SessionBuilder {
     this.onUpdate();
   }
 
+  /**
+   * Render the current practices list with drag-and-drop capabilities
+   * Sets up event listeners for reordering and removal
+   * @returns {void}
+   */
   updatePracticesList() {
     if (!this.practicesContainer) return;
     this.cleanupEventListeners();
@@ -119,6 +196,10 @@ export default class SessionBuilder {
     this.activeListeners.get(element).push({ type, handler, options });
   }
 
+  /**
+   * Remove all tracked event listeners to prevent memory leaks
+   * @returns {void}
+   */
   cleanupEventListeners() {
     if (!this.practicesContainer) return;
     const items = this.practicesContainer.querySelectorAll('.selected-practice-item');
@@ -143,18 +224,32 @@ export default class SessionBuilder {
     });
   }
 
+  /**
+   * Add a practice to the session and update UI
+   * @param {string} practice - Practice name to add
+   * @returns {void}
+   */
   addPractice(practice) {
     this.practices.push(practice);
     this.updatePracticesList();
     this.onUpdate();
   }
 
+  /**
+   * Remove a practice by index and update UI
+   * @param {number} index - Index of practice to remove
+   * @returns {void}
+   */
   removePractice(index) {
     this.practices.splice(index, 1);
     this.updatePracticesList();
     this.onUpdate();
   }
 
+  /**
+   * Display the practice selection interface with available categories
+   * @returns {void}
+   */
   showPracticeSelector() {
     if (!this.practiceSelector) return;
     this.practiceSelector.style.display = 'block';
@@ -192,6 +287,9 @@ export default class SessionBuilder {
   handleDragOver(e) {
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
+    // Real-time visual feedback: move the dragged element during drag operation
+    // This provides immediate visual response showing where the item will be dropped
+    // Unlike many drag implementations that only show placeholder, this moves the actual element
     const afterElement = this.getDragAfterElement(e.clientY);
     const draggingItem = this.practicesContainer.querySelector('.dragging');
     if (afterElement == null) this.practicesContainer.appendChild(draggingItem);
@@ -216,10 +314,16 @@ export default class SessionBuilder {
     this.onUpdate();
   }
   getDragAfterElement(y) {
+    // Smart insertion point calculation for smooth drag reordering
+    // Uses mathematical approach: find element with smallest negative offset from cursor
+    // This creates natural behavior - drop above an element if cursor is in upper half
     const draggableElements = [...this.practicesContainer.querySelectorAll('.selected-practice-item:not(.dragging)')];
     return draggableElements.reduce((closest, child) => {
       const box = child.getBoundingClientRect();
+      // Calculate offset from element's vertical center point
+      // Negative = cursor above center, positive = cursor below center
       const offset = y - box.top - box.height / 2;
+      // Find element with smallest negative offset (closest element above cursor)
       if (offset < 0 && offset > closest.offset) {
         return { offset: offset, element: child };
       } else {
@@ -227,14 +331,32 @@ export default class SessionBuilder {
       }
     }, { offset: Number.NEGATIVE_INFINITY }).element;
   }
+  /**
+   * Get current practices list as a copy
+   * @returns {Array<string>} Copy of current practices array
+   */
   getPractices() { return [...this.practices]; }
+  /**
+   * Get current posture selection
+   * @returns {string} Current posture name
+   */
   getPosture() { return this.posture; }
+  /**
+   * Load a session with specified practices and posture
+   * @param {Array<string>} practices - Practices to load
+   * @param {string} posture - Posture to select
+   * @returns {void}
+   */
   loadSession(practices, posture) {
     this.practices = [...practices];
     this.posture = posture || 'Sitting';
     this.initializePostureButtons();
     this.updatePracticesList();
   }
+  /**
+   * Clean up event listeners and resources
+   * @returns {void}
+   */
   destroy() {
     this.cleanupEventListeners();
     this.practices = [];

@@ -18,6 +18,17 @@ import { createCategoryElementFactory } from './utils.js';
 import DataManager from './DataManager.js';
 import UIManager, { showPracticeInfo } from './UIManager.js';
 import { PRACTICE_CONFIG, POSTURES, getPracticeInfo, getCategoryForPractice } from './PracticeConfig.js';
+import { 
+    TIMER_DEFAULT_DURATION_SEC, 
+    DEBOUNCE_SAVE_DELAY_MS, 
+    DEBOUNCE_STATS_DELAY_MS,
+    SPLASH_SCREEN_DURATION_MS,
+    FADE_ANIMATION_MS,
+    DURATION_INCREMENT_MIN,
+    MIN_SESSION_DURATION_MIN,
+    MAX_SESSION_DURATION_MIN,
+    SECONDS_PER_MINUTE
+} from './constants.js';
 
 /**
  * Main application class that orchestrates all modules
@@ -31,7 +42,7 @@ export default class MeditationTimerApp {
          */
         this.state = {
             timer: {
-                duration: 30 * 60, // seconds (default to 30 min)
+                duration: TIMER_DEFAULT_DURATION_SEC,
                 elapsed: 0,
                 interval: null,
                 isRunning: false,
@@ -76,8 +87,8 @@ export default class MeditationTimerApp {
         this.postures = config.postures || POSTURES;
         
         // Debounced functions to prevent excessive calls during rapid updates
-        this.debouncedSaveState = this.debounce(this.saveState.bind(this), 1000);
-        this.debouncedLoadStatistics = this.debounce(() => this.stats && this.stats.loadStatistics(), 300);
+        this.debouncedSaveState = this.debounce(this.saveState.bind(this), DEBOUNCE_SAVE_DELAY_MS);
+        this.debouncedLoadStatistics = this.debounce(() => this.stats && this.stats.loadStatistics(), DEBOUNCE_STATS_DELAY_MS);
     }
     
     /**
@@ -114,8 +125,8 @@ export default class MeditationTimerApp {
             // Register service worker
             await this.registerServiceWorker();
             
-            // Show splash screen for 3 seconds, then hide
-            const minSplashTime = 3000;
+            // Show splash screen for specified duration, then hide
+            const minSplashTime = SPLASH_SCREEN_DURATION_MS;
             setTimeout(() => {
                 this.hideLoadingScreen();
             }, minSplashTime);
@@ -202,7 +213,7 @@ export default class MeditationTimerApp {
             mainContent.style.display = 'block';
             mainContent.offsetHeight; // Trigger reflow
             mainContent.style.opacity = '1';
-        }, 300);
+        }, FADE_ANIMATION_MS);
     }
     
     // Initialize DOM element references
@@ -388,23 +399,23 @@ export default class MeditationTimerApp {
      * Updates display and saves duration preference
      */
     initializeDurationButtons() {
-        this.setDuration(Math.floor(this.state.timer.duration / 60));
+        this.setDuration(Math.floor(this.state.timer.duration / SECONDS_PER_MINUTE));
         
         this.elements.decreaseBtn?.addEventListener('click', () => {
-            const currentMinutes = Math.floor(this.state.timer.duration / 60);
-            const newMinutes = Math.max(5, currentMinutes - 5);
+            const currentMinutes = Math.floor(this.state.timer.duration / SECONDS_PER_MINUTE);
+            const newMinutes = Math.max(MIN_SESSION_DURATION_MIN, currentMinutes - DURATION_INCREMENT_MIN);
             this.setDuration(newMinutes);
         });
         
         this.elements.increaseBtn?.addEventListener('click', () => {
-            const currentMinutes = Math.floor(this.state.timer.duration / 60);
-            const newMinutes = Math.min(120, currentMinutes + 5);
+            const currentMinutes = Math.floor(this.state.timer.duration / SECONDS_PER_MINUTE);
+            const newMinutes = Math.min(MAX_SESSION_DURATION_MIN, currentMinutes + DURATION_INCREMENT_MIN);
             this.setDuration(newMinutes);
         });
     }
     
     setDuration(minutes) {
-        this.state.timer.duration = minutes * 60;
+        this.state.timer.duration = minutes * SECONDS_PER_MINUTE;
         this.uiManager.updateDurationDisplay(minutes);
         this.dataManager.saveLastDuration(this.state.timer.duration);
         this.debouncedSaveState();
@@ -572,7 +583,7 @@ export default class MeditationTimerApp {
         if (!favorite) return;
         
         this.state.timer.duration = favorite.duration;
-        this.setDuration(Math.floor(favorite.duration / 60));
+        this.setDuration(Math.floor(favorite.duration / SECONDS_PER_MINUTE));
         
         if (this.planningSessionBuilder) {
             this.planningSessionBuilder.loadSession(favorite.practices, favorite.posture || 'Sitting');
@@ -642,7 +653,7 @@ export default class MeditationTimerApp {
         this.timer.reset();
         releaseWakeLock(this);
         
-        const duration = Math.floor(session.duration / 60);
+        const duration = Math.floor(session.duration / SECONDS_PER_MINUTE);
         const practiceCount = this.state.timer.postSessionPractices.length;
         this.showToast(`Session saved: ${duration} minutes, ${practiceCount} practice${practiceCount > 1 ? 's' : ''}`, 'success');
     }
@@ -660,7 +671,7 @@ export default class MeditationTimerApp {
         this.timer.reset();
         releaseWakeLock(this);
         
-        const duration = Math.floor(session.duration / 60);
+        const duration = Math.floor(session.duration / SECONDS_PER_MINUTE);
         this.showToast(`Session time saved: ${duration} minutes`, 'success');
     }
     

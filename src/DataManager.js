@@ -9,10 +9,21 @@
  */
 
 import { add, clear } from './db.js';
+import { MAX_STORED_SESSIONS, MAX_RECENT_SESSIONS, TIMER_DEFAULT_DURATION_SEC, SECONDS_PER_MINUTE } from './constants.js';
 
 /**
  * DataManager class handles all data persistence operations
  * Manages sessions, favorites, and import/export functionality
+ */
+/**
+ * DataManager - Data persistence and management operations
+ * 
+ * Handles all data operations including:
+ * - Session storage and retrieval (IndexedDB/localStorage)
+ * - Favorites management (save/load/delete)
+ * - Import/export functionality with JSON backup files
+ * - Data validation and error handling
+ * - Storage quota management
  */
 export default class DataManager {
     /**
@@ -20,6 +31,12 @@ export default class DataManager {
      * @param {IDBDatabase} db - IndexedDB database instance
      * @param {Function} showToast - Toast notification function
      * @param {Object} stats - Statistics module reference
+     */
+    /**
+     * Initialize DataManager with dependencies
+     * @param {IDBDatabase|null} db - IndexedDB database instance or null for localStorage fallback
+     * @param {Function} showToast - Toast notification function
+     * @param {Stats|null} stats - Statistics module reference for data queries
      */
     constructor(db, showToast, stats) {
         this.db = db;
@@ -31,6 +48,10 @@ export default class DataManager {
     /**
      * Load favorites from localStorage
      * @returns {Array} Array of favorite session configurations
+     */
+    /**
+     * Load favorite sessions from localStorage
+     * @returns {Array<Object>} Array of favorite session configurations
      */
     loadFavoritesFromStorage() {
         try {
@@ -49,9 +70,28 @@ export default class DataManager {
      * @param {string} posture - Meditation posture
      * @returns {Object|null} Created favorite object or null if failed
      */
+    /**
+     * Save current session configuration as a favorite
+     * @param {string} name - Name for the favorite session
+     * @param {Array<string>} practices - List of practice names
+     * @param {number} duration - Session duration in seconds
+     * @param {string} posture - Meditation posture
+     * @returns {Object|null} Created favorite object or null if validation failed
+     */
     saveFavorite(name, practices, duration, posture) {
-        if (!practices || practices.length === 0) {
+        // Validate required parameters
+        if (!Array.isArray(practices) || practices.length === 0) {
             this.showToast('Please add practices first', 'error');
+            return null;
+        }
+        
+        if (typeof duration !== 'number' || duration <= 0) {
+            this.showToast('Invalid session duration', 'error');
+            return null;
+        }
+        
+        if (typeof posture !== 'string' || !posture.trim()) {
+            this.showToast('Invalid posture selection', 'error');
             return null;
         }
 
@@ -120,10 +160,10 @@ export default class DataManager {
             this.saveSessionToLocalStorage(session);
         }
         
-        // Maintain list of last 10 sessions for quick access
+        // Maintain list of recent sessions for quick access
         const recentSessions = JSON.parse(localStorage.getItem('recentSessions') || '[]');
         recentSessions.unshift(session);
-        if (recentSessions.length > 10) {
+        if (recentSessions.length > MAX_RECENT_SESSIONS) {
             recentSessions.pop();
         }
         localStorage.setItem('recentSessions', JSON.stringify(recentSessions));
@@ -131,14 +171,14 @@ export default class DataManager {
 
     /**
      * Save session to localStorage as fallback storage
-     * Maintains maximum of 1000 sessions to avoid storage quota issues
+     * Maintains maximum sessions to avoid storage quota issues
      * @param {Object} session - Session data to save
      */
     saveSessionToLocalStorage(session) {
         const sessions = JSON.parse(localStorage.getItem('allSessions') || '[]');
         sessions.push(session);
         // Prevent localStorage quota exceeded errors
-        if (sessions.length > 1000) {
+        if (sessions.length > MAX_STORED_SESSIONS) {
             sessions.shift();
         }
         localStorage.setItem('allSessions', JSON.stringify(sessions));
@@ -166,6 +206,11 @@ export default class DataManager {
 
     /**
      * Export all session data and favorites to JSON file
+     * Creates timestamped backup file for download
+     * @returns {Promise<void>}
+     */
+    /**
+     * Export all session data and favorites to JSON backup file
      * Creates timestamped backup file for download
      * @returns {Promise<void>}
      */
@@ -200,15 +245,35 @@ export default class DataManager {
      * @param {File} file - File to import
      * @returns {Promise<boolean>} True if import successful
      */
+    /**
+     * Import session data from JSON backup file
+     * Merges imported data with existing sessions and favorites
+     * @param {File} file - File object from file input
+     * @returns {Promise<boolean>} True if import successful, false otherwise
+     */
     async importData(file) {
-        if (!file) return false;
+        // Validate file parameter
+        if (!file || typeof file.text !== 'function') {
+            this.showToast('Invalid file provided', 'error');
+            return false;
+        }
         
         try {
             const text = await file.text();
             const data = JSON.parse(text);
             
-            if (!data.version || !data.sessions) {
-                throw new Error('Invalid backup file');
+            // Validate backup file structure
+            if (!data.version || !Array.isArray(data.sessions)) {
+                throw new Error('Invalid backup file format');
+            }
+            
+            // Additional validation for sessions data
+            const invalidSessions = data.sessions.filter(session => 
+                !session.date || !Array.isArray(session.practices) || typeof session.duration !== 'number'
+            );
+            
+            if (invalidSessions.length > 0) {
+                throw new Error(`${invalidSessions.length} invalid sessions found in backup`);
             }
             
             // Add imported sessions to database
@@ -244,6 +309,11 @@ export default class DataManager {
      * Reset all session data and statistics
      * Clears IndexedDB and localStorage after double confirmation
      * @returns {Promise<boolean>} True if reset successful
+     */
+    /**
+     * Reset all session data and statistics
+     * Clears IndexedDB and localStorage after confirmation
+     * @returns {Promise<boolean>} True if reset successful, false otherwise
      */
     async resetAllData() {
         try {
@@ -306,10 +376,10 @@ export default class DataManager {
 
     /**
      * Get last used duration
-     * @returns {number} Duration in seconds (default 1800 = 30 minutes)
+     * @returns {number} Duration in seconds (default 30 minutes)
      */
     getLastDuration() {
         const saved = localStorage.getItem('lastDuration');
-        return saved ? parseInt(saved, 10) : 1800;
+        return saved ? parseInt(saved, 10) : TIMER_DEFAULT_DURATION_SEC;
     }
 }

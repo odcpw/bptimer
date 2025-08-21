@@ -9,6 +9,7 @@
  */
 
 import { getPracticeInfo } from './PracticeConfig.js';
+import { TOAST_DURATION_MS, FADE_ANIMATION_MS } from './constants.js';
 
 // Keeping PRACTICE_DESCRIPTIONS for backward compatibility
 // This will be removed in a future update
@@ -97,10 +98,24 @@ To know: a) when they are present; b) when they are absent; c) how they can aris
 /**
  * UIManager class handles all UI utilities and modal management
  */
+/**
+ * UIManager - User interface utilities and modal management
+ * 
+ * Provides centralized UI management including:
+ * - Toast notifications with auto-dismiss
+ * - Modal dialog management
+ * - DOM manipulation utilities
+ * - List rendering (favorites, recent sessions)
+ * - Practice information display
+ */
 export default class UIManager {
     /**
      * Initialize UIManager with DOM element references
      * @param {Object} elements - Object containing DOM element references
+     */
+    /**
+     * Initialize UIManager with DOM element references
+     * @param {Object} elements - Object containing cached DOM element references
      */
     constructor(elements) {
         this.elements = elements;
@@ -112,6 +127,12 @@ export default class UIManager {
      * @param {string} message - Message to display
      * @param {string} type - Notification type: 'info', 'success', 'error'
      * @param {Function} onClick - Optional click handler
+     */
+    /**
+     * Display toast notification to user
+     * @param {string} message - Message text to display
+     * @param {string} type - Notification type: 'info', 'success', 'error'
+     * @param {Function|null} onClick - Optional click handler for interactive toasts
      */
     showToast(message, type = 'info', onClick = null) {
         const toast = document.createElement('div');
@@ -126,7 +147,7 @@ export default class UIManager {
         this.elements.toastContainer.appendChild(toast);
         this.activeToasts.push(toast);
         
-        // Auto-dismiss toast after 5 seconds
+        // Auto-dismiss toast after specified duration
         setTimeout(() => {
             toast.style.opacity = '0';
             setTimeout(() => {
@@ -135,8 +156,8 @@ export default class UIManager {
                 if (index > -1) {
                     this.activeToasts.splice(index, 1);
                 }
-            }, 300);
-        }, 5000);
+            }, FADE_ANIMATION_MS);
+        }, TOAST_DURATION_MS);
     }
 
     /**
@@ -150,6 +171,10 @@ export default class UIManager {
     /**
      * Show practice information modal
      * @param {string} practiceName - Name of practice to show info for
+     */
+    /**
+     * Show practice information modal with detailed instructions
+     * @param {string} practiceName - Name of practice to display information for
      */
     showPracticeInfo(practiceName) {
         // First try to get info from PRACTICE_CONFIG
@@ -267,6 +292,12 @@ export default class UIManager {
      * @param {Function} onLoad - Callback for loading a favorite
      * @param {Function} onDelete - Callback for deleting a favorite
      */
+    /**
+     * Update favorites list display with interactive items
+     * @param {Array<Object>} favorites - Array of favorite session objects
+     * @param {Function} onLoad - Callback function when favorite is loaded
+     * @param {Function} onDelete - Callback function when favorite is deleted
+     */
     updateFavoritesList(favorites, onLoad, onDelete) {
         const fragment = document.createDocumentFragment();
         
@@ -313,6 +344,10 @@ export default class UIManager {
     /**
      * Update recent sessions display
      * @param {Array} sessions - Array of recent sessions
+     */
+    /**
+     * Update recent sessions list display
+     * @param {Array<Object>} sessions - Array of recent session objects
      */
     updateRecentSessionsList(sessions) {
         const fragment = document.createDocumentFragment();
