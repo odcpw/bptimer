@@ -2,6 +2,17 @@
 
 A comprehensive meditation app for balanced practice with formal sessions and daily mindfulness reminders.
 
+This is a monorepo containing every part of BPtimer:
+
+| Path | What it is |
+| --- | --- |
+| `/` (root) | The web app (PWA), live at https://odcpw.github.io/bptimer/ |
+| `mobile/` | The Flutter mobile app (Android/iOS/desktop) |
+| `privacy/` | The privacy policy, live at https://odcpw.github.io/bptimer/privacy/ |
+
+> Previously split across the `bptimer`, `bptimer-flutter`, and `bptimer-privacy`
+> repositories; merged here with full git history preserved.
+
 ## Features
 
 ### Meditation Timer

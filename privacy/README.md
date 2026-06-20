@@ -1,10 +1,10 @@
 # BPTimer Privacy Policy
 
-This repository hosts the privacy policy for BPTimer, a meditation timer app.
+This folder hosts the privacy policy for BPTimer, a meditation timer app.
 
 ## Live Policy
 
-The privacy policy is hosted at: https://odcpw.github.io/bptimer-privacy
+The privacy policy is hosted at: https://odcpw.github.io/bptimer/privacy/
 
 ## Summary
 
