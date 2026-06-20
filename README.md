@@ -6,12 +6,14 @@ This is a monorepo containing every part of BPtimer:
 
 | Path | What it is |
 | --- | --- |
-| `/` (root) | The web app (PWA), live at https://odcpw.github.io/bptimer/ |
-| `mobile/` | The Flutter mobile app (Android/iOS/desktop) |
+| `mobile/` | **The BPtimer app** — Flutter (Android/iOS/desktop). This is the current, primary product. |
+| `/` (root) | The original web prototype (PWA) that the app was built from. Still live as a web demo at https://odcpw.github.io/bptimer/ |
 | `privacy/` | The privacy policy, live at https://odcpw.github.io/bptimer/privacy/ |
 
-> Previously split across the `bptimer`, `bptimer-flutter`, and `bptimer-privacy`
-> repositories; merged here with full git history preserved.
+> The PWA at the repo root came first and served as the prototype; the Flutter
+> app in `mobile/` is the real product it grew into. Previously split across the
+> `bptimer`, `bptimer-flutter`, and `bptimer-privacy` repositories; merged here
+> with full git history preserved.
 
 ## Features
 
